@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class MangaProgressControllerTests {
 
 	private static final String URL = "https://www.mangaworld.mx/manga/404/nanatsu-no-taizai/read/5f74d960d165b15bc7740472/9";
+	private static final String COVER_URL = "https://www.mangaworld.mx/covers/nanatsu.jpg";
 
 	@Autowired
 	MockMvc mockMvc;
@@ -41,14 +42,16 @@ class MangaProgressControllerTests {
 		mockMvc.perform(get("/mw/save")
 						.param("token", "test-token")
 						.param("url", URL)
-						.param("title", "Nanatsu no Taizai"))
+						.param("title", "Nanatsu no Taizai")
+						.param("coverUrl", COVER_URL))
 				.andExpect(status().isFound())
 				.andExpect(header().string("Location", URL));
 
 		mockMvc.perform(get("/mw/api/progress").param("token", "test-token"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].mangaId").value("404"))
-				.andExpect(jsonPath("$[0].title").value("Nanatsu no Taizai"));
+				.andExpect(jsonPath("$[0].title").value("Nanatsu no Taizai"))
+				.andExpect(jsonPath("$[0].coverUrl").value(COVER_URL));
 	}
 
 	@Test
@@ -85,10 +88,13 @@ class MangaProgressControllerTests {
 		mockMvc.perform(get("/mw/save")
 						.param("token", "test-token")
 						.param("url", URL)
-						.param("title", "Nanatsu no Taizai"));
+						.param("title", "Nanatsu no Taizai")
+						.param("coverUrl", COVER_URL));
 
 		mockMvc.perform(get("/mw/list").param("token", "test-token"))
 				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Copertina")))
+				.andExpect(content().string(containsString(COVER_URL)))
 				.andExpect(content().string(containsString("Nanatsu no Taizai")))
 				.andExpect(content().string(containsString("404")))
 				.andExpect(content().string(containsString("Apri")));

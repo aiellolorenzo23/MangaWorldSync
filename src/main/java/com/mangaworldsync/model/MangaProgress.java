@@ -12,6 +12,7 @@ public record MangaProgress(
 		String chapterId,
 		int page,
 		String title,
+		String coverUrl,
 		String url,
 		Instant updatedAt) {
 }

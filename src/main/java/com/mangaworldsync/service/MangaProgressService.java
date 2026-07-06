@@ -3,6 +3,8 @@ package com.mangaworldsync.service;
 import com.mangaworldsync.config.MangaSyncProperties;
 import com.mangaworldsync.model.MangaProgress;
 import com.mangaworldsync.repository.MangaProgressRepository;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
@@ -38,7 +40,7 @@ public class MangaProgressService {
 		this.clock = clock;
 	}
 
-	public MangaProgress save(String token, String url, String title) {
+	public MangaProgress save(String token, String url, String title, String coverUrl) {
 		validateToken(token);
 		ParsedMangaUrl parsedUrl = parser.parse(url);
 		MangaProgress progress = new MangaProgress(
@@ -47,6 +49,7 @@ public class MangaProgressService {
 				parsedUrl.chapterId(),
 				parsedUrl.page(),
 				title,
+				normalizeCoverUrl(coverUrl),
 				parsedUrl.url(),
 				Instant.now(clock));
 		return repository.save(progress);
@@ -66,6 +69,23 @@ public class MangaProgressService {
 	private void validateToken(String token) {
 		if (!properties.token().equals(token)) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
+		}
+	}
+
+	private static String normalizeCoverUrl(String coverUrl) {
+		if (coverUrl == null || coverUrl.isBlank()) {
+			return null;
+		}
+		try {
+			URI uri = new URI(coverUrl.trim());
+			String scheme = uri.getScheme();
+			if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+				return null;
+			}
+			return uri.toString();
+		}
+		catch (URISyntaxException ex) {
+			return null;
 		}
 	}
 }

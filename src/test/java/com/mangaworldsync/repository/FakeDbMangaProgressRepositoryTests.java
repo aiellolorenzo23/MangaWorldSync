@@ -34,6 +34,7 @@ class FakeDbMangaProgressRepositoryTests {
 				"chapter-1",
 				9,
 				"Nanatsu",
+				"https://www.mangaworld.mx/covers/nanatsu.jpg",
 				"https://www.mangaworld.mx/manga/404/nanatsu-no-taizai/read/chapter-1/9",
 				Instant.parse("2026-07-06T21:30:00Z"));
 		MangaProgress updated = new MangaProgress(
@@ -42,6 +43,7 @@ class FakeDbMangaProgressRepositoryTests {
 				"chapter-2",
 				10,
 				"Nanatsu",
+				"https://www.mangaworld.mx/covers/nanatsu-new.jpg",
 				"https://www.mangaworld.mx/manga/404/nanatsu-no-taizai/read/chapter-2/10",
 				Instant.parse("2026-07-06T22:30:00Z"));
 

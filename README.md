@@ -10,6 +10,7 @@ It does not scrape, download, cache, or proxy manga content. It only stores read
 - chapter id
 - page
 - optional browser title
+- optional cover image URL
 - last update timestamp
 
 Storage is handled by [FakeDBRepository](https://github.com/aiellolorenzo23/FakeDBRepository), using a local JSON file.
@@ -111,7 +112,7 @@ Create a bookmark called `MW Salva` in Brave Android and Chrome PC.
 Use this as the bookmark URL, replacing the domain and token:
 
 ```js
-javascript:(()=>{location.href='https://YOUR-RAILWAY-DOMAIN.up.railway.app/mw/save?token=YOUR_SECRET_TOKEN&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)})();
+javascript:(()=>{const q=s=>document.querySelector(s);const img=q('meta[property="og:image"],meta[name="twitter:image"]')?.content||q('link[rel="image_src"]')?.href||q('.cover img,.thumb img,img[src*="cover"],img[src*="thumb"]')?.src||'';location.href='https://YOUR-RAILWAY-DOMAIN.up.railway.app/mw/save?token=YOUR_SECRET_TOKEN&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)+'&coverUrl='+encodeURIComponent(img)})();
 ```
 
 On Android Brave:
@@ -146,6 +147,12 @@ GET /mw/save?token={TOKEN}&url={ENCODED_URL}&title={ENCODED_TITLE}
 ```
 
 Returns `302` to the original MangaWorld URL when saved.
+
+Optional query parameter:
+
+```text
+coverUrl={ENCODED_COVER_URL}
+```
 
 ### Resume Progress
 
