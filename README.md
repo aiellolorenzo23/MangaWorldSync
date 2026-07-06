@@ -121,6 +121,32 @@ With this setup, FakeDB persists data in:
 /data/manga-progress.json
 ```
 
+## Inspect Railway Volume Data
+
+Railway does not provide built-in SFTP for volumes, but volume files can be managed from the Railway CLI.
+
+Install/login/link the project:
+
+```powershell
+railway login
+railway link
+```
+
+Then use one of Railway's volume commands:
+
+```powershell
+railway volume browse
+railway volume files
+```
+
+The FakeDB JSON file is the value of `MANGA_SYNC_STORAGE_FILE`, normally:
+
+```text
+/data/manga-progress.json
+```
+
+For FakeDBStudio, download or copy that JSON locally, inspect it, and upload/replace it only if you intentionally want to change production data.
+
 ## Bookmarklet: Save Position
 
 Create a bookmark called `MW Salva` in Brave Android and Chrome PC.
@@ -185,6 +211,15 @@ GET /mw/list?token={TOKEN}
 ```
 
 Shows a responsive card list with saved progress, open links, and delete buttons.
+
+The HTML list includes client-side search by manga name/slug and sorting by:
+
+- most recently updated
+- least recently updated
+- title A-Z
+- title Z-A
+- highest page
+- lowest page
 
 ### Delete Progress
 

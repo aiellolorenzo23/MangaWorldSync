@@ -98,6 +98,9 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString(COVER_URL)))
 				.andExpect(content().string(containsString("Nanatsu no Taizai")))
 				.andExpect(content().string(containsString("404")))
+				.andExpect(content().string(containsString("Cerca manga")))
+				.andExpect(content().string(containsString("Aggiornati di recente")))
+				.andExpect(content().string(containsString("Titolo A-Z")))
 				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("Apri")));
 	}

@@ -108,6 +108,25 @@ public class MangaProgressController {
 				    .brand { display: block; width: min(30rem, 84vw); height: auto; }
 				    .brand-text { fill: #3d5a80; font: 900 82px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
 				    .count { color: var(--muted); font-size: .95rem; white-space: nowrap; }
+				    .toolbar {
+				      display: grid;
+				      grid-template-columns: minmax(0, 1fr) 13rem;
+				      gap: .75rem;
+				      margin-bottom: 1rem;
+				    }
+				    .search, .sort {
+				      min-height: 2.75rem;
+				      width: 100%;
+				      border: 1px solid var(--line);
+				      border-radius: .45rem;
+				      background: var(--panel);
+				      color: var(--text);
+				      font: inherit;
+				      outline: none;
+				    }
+				    .search { padding: 0 .9rem; }
+				    .sort { padding: 0 .7rem; cursor: pointer; }
+				    .search:focus, .sort:focus { border-color: var(--accent); }
 				    .library { display: grid; gap: .85rem; }
 				    .manga-card {
 				      display: grid;
@@ -158,6 +177,7 @@ public class MangaProgressController {
 				    @media (max-width: 640px) {
 				      main { padding: 1.25rem .75rem 2rem; }
 				      header { align-items: start; flex-direction: column; }
+				      .toolbar { grid-template-columns: 1fr; }
 				      .manga-card {
 				        grid-template-columns: 4.5rem minmax(0, 1fr);
 				        gap: .8rem;
@@ -179,14 +199,31 @@ public class MangaProgressController {
 				""");
 
 		html.append(renderBrandLogo())
-				.append("<div class=\"count\">").append(progressItems.size()).append(" salvati</div>")
+				.append("<div class=\"count\"><span id=\"visible-count\">").append(progressItems.size()).append("</span> / ")
+				.append(progressItems.size()).append(" salvati</div>")
 				.append("""
 				</header>
-				<section class="library">
+				<section class="toolbar" aria-label="Filtri libreria">
+				  <input class="search" id="search" type="search" placeholder="Cerca manga" autocomplete="off">
+				  <select class="sort" id="sort">
+				    <option value="updated-desc">Aggiornati di recente</option>
+				    <option value="updated-asc">Aggiornati meno recenti</option>
+				    <option value="title-asc">Titolo A-Z</option>
+				    <option value="title-desc">Titolo Z-A</option>
+				    <option value="page-desc">Pagina piu alta</option>
+				    <option value="page-asc">Pagina piu bassa</option>
+				  </select>
+				</section>
+				<section class="library" id="library">
 				""");
 
 		for (MangaProgress progress : progressItems) {
-			html.append("<article class=\"manga-card\">")
+			html.append("<article class=\"manga-card\" data-title=\"").append(escape(displayTitle(progress)))
+					.append("\" data-slug=\"").append(escape(progress.slug()))
+					.append("\" data-updated=\"").append(progress.updatedAt().toEpochMilli())
+					.append("\" data-page=\"").append(progress.page())
+					.append("\" data-chapter=\"").append(escape(chapterValue(progress)))
+					.append("\">")
 					.append(renderCover(progress))
 					.append("<div class=\"details\">")
 					.append("<h2 class=\"title\">").append(escape(displayTitle(progress))).append("</h2>")
@@ -210,12 +247,52 @@ public class MangaProgressController {
 		}
 
 		if (progressItems.isEmpty()) {
-			html.append("<div class=\"empty\">Nessuna posizione salvata.</div>");
+			html.append("<div class=\"empty\" id=\"empty-message\">Nessuna posizione salvata.</div>");
+		}
+		else {
+			html.append("<div class=\"empty\" id=\"empty-message\" hidden>Nessun manga trovato.</div>");
 		}
 
 		html.append("""
 				</section>
 				</main>
+				<script>
+				(() => {
+				  const library = document.querySelector('#library');
+				  const search = document.querySelector('#search');
+				  const sort = document.querySelector('#sort');
+				  const visibleCount = document.querySelector('#visible-count');
+				  const emptyMessage = document.querySelector('#empty-message');
+				  const cards = Array.from(document.querySelectorAll('.manga-card'));
+				  const compareText = (a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' });
+				  const sorters = {
+				    'updated-desc': (a, b) => Number(b.dataset.updated) - Number(a.dataset.updated),
+				    'updated-asc': (a, b) => Number(a.dataset.updated) - Number(b.dataset.updated),
+				    'title-asc': (a, b) => compareText(a.dataset.title, b.dataset.title),
+				    'title-desc': (a, b) => compareText(b.dataset.title, a.dataset.title),
+				    'page-desc': (a, b) => Number(b.dataset.page) - Number(a.dataset.page),
+				    'page-asc': (a, b) => Number(a.dataset.page) - Number(b.dataset.page)
+				  };
+				  function applyFilters() {
+				    const query = search.value.trim().toLocaleLowerCase('it');
+				    let shown = 0;
+				    cards.sort(sorters[sort.value] || sorters['updated-desc']).forEach(card => {
+				      const text = `${card.dataset.title} ${card.dataset.slug}`.toLocaleLowerCase('it');
+				      const visible = !query || text.includes(query);
+				      card.hidden = !visible;
+				      if (visible) shown += 1;
+				      library.insertBefore(card, emptyMessage);
+				    });
+				    visibleCount.textContent = shown;
+				    emptyMessage.hidden = cards.length === 0 ? false : shown !== 0;
+				    if (cards.length === 0) emptyMessage.textContent = 'Nessuna posizione salvata.';
+				    else emptyMessage.textContent = 'Nessun manga trovato.';
+				  }
+				  search.addEventListener('input', applyFilters);
+				  sort.addEventListener('change', applyFilters);
+				  applyFilters();
+				})();
+				</script>
 				</body>
 				</html>
 				""");
@@ -247,9 +324,12 @@ public class MangaProgressController {
 	}
 
 	private static String displayProgress(MangaProgress progress) {
+		return "Capitolo " + chapterValue(progress) + " · Pagina " + progress.page();
+	}
+
+	private static String chapterValue(MangaProgress progress) {
 		Matcher matcher = CHAPTER_PATTERN.matcher(progress.title() == null ? "" : progress.title());
-		String chapter = matcher.find() ? "Capitolo " + matcher.group(1) : "Capitolo " + progress.chapterId();
-		return chapter + " · Pagina " + progress.page();
+		return matcher.find() ? matcher.group(1) : progress.chapterId();
 	}
 
 	private static String renderCover(MangaProgress progress) {
