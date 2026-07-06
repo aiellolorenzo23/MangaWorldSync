@@ -3,7 +3,12 @@ package com.mangaworldsync.controller;
 import com.mangaworldsync.model.MangaProgress;
 import com.mangaworldsync.service.MangaProgressService;
 import java.net.URI;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +21,11 @@ import org.springframework.web.util.HtmlUtils;
 @RestController
 @RequestMapping("/mw")
 public class MangaProgressController {
+
+	private static final Pattern CHAPTER_PATTERN = Pattern.compile("(?i)\\bcapitolo\\s+([\\w.-]+)");
+	private static final DateTimeFormatter UPDATED_AT_FORMATTER = DateTimeFormatter
+			.ofPattern("dd/MM/yyyy HH:mm", Locale.ITALY)
+			.withZone(ZoneId.of("Europe/Rome"));
 
 	private final MangaProgressService service;
 
@@ -63,45 +73,114 @@ public class MangaProgressController {
 				  <meta name="viewport" content="width=device-width, initial-scale=1">
 				  <title>MangaWorldSync</title>
 				  <style>
-				    body { font-family: system-ui, sans-serif; margin: 2rem; color: #1f2937; }
-				    table { border-collapse: collapse; width: 100%; }
-				    th, td { border-bottom: 1px solid #d1d5db; padding: .6rem; text-align: left; vertical-align: middle; }
-				    th { background: #f3f4f6; }
-				    a { color: #0f766e; }
-				    .cover-cell { width: 5rem; }
-				    .cover { width: 3.5rem; height: 5rem; object-fit: cover; border-radius: .25rem; background: #e5e7eb; display: block; }
-				    .cover-empty { width: 3.5rem; height: 5rem; border-radius: .25rem; background: #e5e7eb; }
+				    :root {
+				      color-scheme: dark;
+				      --bg: #101413;
+				      --panel: #171d1b;
+				      --panel-strong: #1d2522;
+				      --text: #f4f1ea;
+				      --muted: #a9b2ad;
+				      --line: #2a3430;
+				      --accent: #4fd1b2;
+				      --accent-strong: #7ce7cc;
+				    }
+				    * { box-sizing: border-box; }
+				    body {
+				      margin: 0;
+				      min-height: 100vh;
+				      background: var(--bg);
+				      color: var(--text);
+				      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+				    }
+				    main { width: min(1120px, 100%); margin: 0 auto; padding: 2rem 1rem 3rem; }
+				    header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+				    h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1; }
+				    .count { color: var(--muted); font-size: .95rem; white-space: nowrap; }
+				    .library { display: grid; gap: .85rem; }
+				    .manga-card {
+				      display: grid;
+				      grid-template-columns: 5rem minmax(0, 1fr) auto;
+				      gap: 1rem;
+				      align-items: center;
+				      padding: .8rem;
+				      border: 1px solid var(--line);
+				      border-radius: .5rem;
+				      background: var(--panel);
+				    }
+				    .cover { width: 5rem; aspect-ratio: 2 / 3; object-fit: cover; border-radius: .35rem; background: var(--panel-strong); display: block; }
+				    .cover-empty { width: 5rem; aspect-ratio: 2 / 3; border-radius: .35rem; background: var(--panel-strong); border: 1px solid var(--line); }
+				    .details { min-width: 0; display: grid; gap: .35rem; }
+				    .title { margin: 0; font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere; }
+				    .progress { color: var(--accent-strong); font-size: .95rem; }
+				    .meta { display: flex; flex-wrap: wrap; gap: .45rem .9rem; color: var(--muted); font-size: .85rem; }
+				    .open {
+				      display: inline-flex;
+				      align-items: center;
+				      justify-content: center;
+				      min-height: 2.5rem;
+				      padding: 0 1rem;
+				      border-radius: .4rem;
+				      background: var(--accent);
+				      color: #061411;
+				      font-weight: 700;
+				      text-decoration: none;
+				    }
+				    .empty {
+				      padding: 1rem;
+				      border: 1px solid var(--line);
+				      border-radius: .5rem;
+				      background: var(--panel);
+				      color: var(--muted);
+				    }
+				    @media (max-width: 640px) {
+				      main { padding: 1.25rem .75rem 2rem; }
+				      header { align-items: start; flex-direction: column; }
+				      .manga-card {
+				        grid-template-columns: 4.5rem minmax(0, 1fr);
+				        gap: .8rem;
+				      }
+				      .cover, .cover-empty { width: 4.5rem; }
+				      .open {
+				        grid-column: 1 / -1;
+				        width: 100%;
+				      }
+				    }
 				  </style>
 				</head>
 				<body>
-				<h1>MangaWorldSync</h1>
-				<table>
-				<thead><tr><th>Copertina</th><th>Titolo</th><th>mangaId</th><th>slug</th><th>chapterId</th><th>page</th><th>Aggiornato</th><th></th></tr></thead>
-				<tbody>
+				<main>
+				<header>
+				  <h1>MangaWorldSync</h1>
+				""");
+
+		html.append("<div class=\"count\">").append(progressItems.size()).append(" salvati</div>")
+				.append("""
+				</header>
+				<section class="library">
 				""");
 
 		for (MangaProgress progress : progressItems) {
-			html.append("<tr>")
-					.append("<td class=\"cover-cell\">").append(renderCover(progress)).append("</td>")
-					.append("<td>").append(escape(displayTitle(progress))).append("</td>")
-					.append("<td>").append(escape(progress.mangaId())).append("</td>")
-					.append("<td>").append(escape(progress.slug())).append("</td>")
-					.append("<td>").append(escape(progress.chapterId())).append("</td>")
-					.append("<td>").append(progress.page()).append("</td>")
-					.append("<td>").append(escape(progress.updatedAt().toString())).append("</td>")
-					.append("<td><a href=\"/mw/go?token=").append(escape(token))
+			html.append("<article class=\"manga-card\">")
+					.append(renderCover(progress))
+					.append("<div class=\"details\">")
+					.append("<h2 class=\"title\">").append(escape(displayTitle(progress))).append("</h2>")
+					.append("<div class=\"progress\">").append(escape(displayProgress(progress))).append("</div>")
+					.append("<div class=\"meta\"><span>").append(escape(progress.slug())).append("</span><span>Aggiornato ")
+					.append(escape(UPDATED_AT_FORMATTER.format(progress.updatedAt()))).append("</span></div>")
+					.append("</div>")
+					.append("<a class=\"open\" href=\"/mw/go?token=").append(escape(token))
 					.append("&amp;mangaId=").append(escape(progress.mangaId()))
-					.append("\">Apri</a></td>")
-					.append("</tr>");
+					.append("\">Apri</a>")
+					.append("</article>");
 		}
 
 		if (progressItems.isEmpty()) {
-			html.append("<tr><td colspan=\"8\">Nessuna posizione salvata.</td></tr>");
+			html.append("<div class=\"empty\">Nessuna posizione salvata.</div>");
 		}
 
 		html.append("""
-				</tbody>
-				</table>
+				</section>
+				</main>
 				</body>
 				</html>
 				""");
@@ -109,7 +188,17 @@ public class MangaProgressController {
 	}
 
 	private static String displayTitle(MangaProgress progress) {
-		return progress.title() == null || progress.title().isBlank() ? progress.slug() : progress.title();
+		String title = progress.title() == null || progress.title().isBlank() ? progress.slug() : progress.title();
+		return title
+				.replaceFirst("(?i)\\s+-\\s*MangaWorld$", "")
+				.replaceFirst("(?i)\\s+Capitolo\\s+[\\w.-]+.*$", "")
+				.trim();
+	}
+
+	private static String displayProgress(MangaProgress progress) {
+		Matcher matcher = CHAPTER_PATTERN.matcher(progress.title() == null ? "" : progress.title());
+		String chapter = matcher.find() ? "Capitolo " + matcher.group(1) : "Capitolo " + progress.chapterId();
+		return chapter + " · Pagina " + progress.page();
 	}
 
 	private static String renderCover(MangaProgress progress) {
