@@ -105,8 +105,8 @@ public class MangaProgressController {
 				    }
 				    main { width: min(1120px, 100%); margin: 0 auto; padding: 2rem 1rem 3rem; }
 				    header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
-				    .brand { display: block; width: min(23rem, 72vw); height: auto; }
-				    .brand-text { fill: var(--text); font: 800 76px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+				    .brand { display: block; width: min(30rem, 84vw); height: auto; }
+				    .brand-text { fill: #3d5a80; font: 900 82px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
 				    .count { color: var(--muted); font-size: .95rem; white-space: nowrap; }
 				    .library { display: grid; gap: .85rem; }
 				    .manga-card {
@@ -224,10 +224,10 @@ public class MangaProgressController {
 
 	private static String renderBrandLogo() {
 		return """
-				<svg class="brand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 120" role="img" aria-label="mangaworld-sync">
+				<svg class="brand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 120" role="img" aria-label="mangaworld-sync">
 				  <title>mangaworld-sync</title>
-				  <text class="brand-text" x="0" y="82">mangaworld-sync</text>
-				  <g transform="translate(760 2) scale(.34) translate(-2165 0)">
+				  <text class="brand-text" x="0" y="84">mangaworld-sync</text>
+				  <g transform="translate(805 2) scale(.34) translate(-2165 0)">
 				    <path fill="#ee6c4d" d="M2348.77,323.73h0a27,27,0,0,1-36.94-9.9L2219.14,153.3v147a27,27,0,1,1-54.09,0V54.71q0-.73,0-1.45A27,27,0,0,1,2178.61,29h0a27,27,0,0,1,36.94,9.9L2358.67,286.8A27,27,0,0,1,2348.77,323.73Z"/>
 				    <rect fill="#ee6c4d" x="2333.94" y="6.22" width="54.09" height="340.31" rx="27.04" ry="27.04" transform="translate(228.12 1204.12) rotate(-30)"/>
 				    <rect fill="#3d5a80" x="2431.29" y="6.22" width="54.09" height="340.31" rx="27.04" ry="27.04" transform="translate(241.16 1252.8) rotate(-30)"/>
