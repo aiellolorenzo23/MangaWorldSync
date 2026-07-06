@@ -48,6 +48,22 @@ manga-sync:
 
 Redirects are only allowed to valid MangaWorld reader URLs, so the app is not an open redirect.
 
+## Generate A Token
+
+Use a long random token for `MANGA_SYNC_TOKEN`. On PowerShell:
+
+```powershell
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+[Convert]::ToHexString($bytes)
+```
+
+This prints a 64-character hexadecimal token. Use that value in Railway as:
+
+```text
+MANGA_SYNC_TOKEN=PASTE_THE_GENERATED_TOKEN_HERE
+```
+
 ## Run Locally
 
 PowerShell:
@@ -188,6 +204,19 @@ GET /mw/api/progress?token={TOKEN}
 ```
 
 Returns all saved progress entries as JSON.
+
+## Sharing The App
+
+This MVP has one library per deployed app/token. If someone else uses the same Railway URL and the same `MANGA_SYNC_TOKEN`, they can read, add, update, and delete entries in the same FakeDB JSON file.
+
+To share the project without mixing libraries, the safest option is a separate deployment:
+
+1. Fork or copy the repository.
+2. Deploy it on another Railway project.
+3. Use a different `MANGA_SYNC_TOKEN`.
+4. Attach a separate volume and `MANGA_SYNC_STORAGE_FILE`.
+
+Multi-user support with separate tokens/libraries can be added later, but it is not part of the current MVP.
 
 ## Tests
 
