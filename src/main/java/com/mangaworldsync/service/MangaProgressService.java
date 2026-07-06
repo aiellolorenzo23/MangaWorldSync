@@ -66,6 +66,14 @@ public class MangaProgressService {
 		return repository.findAll();
 	}
 
+	public void delete(String token, String mangaId) {
+		validateToken(token);
+		if (repository.findByMangaId(mangaId).isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No progress saved for mangaId " + mangaId);
+		}
+		repository.deleteByMangaId(mangaId);
+	}
+
 	private void validateToken(String token) {
 		if (!properties.token().equals(token)) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");

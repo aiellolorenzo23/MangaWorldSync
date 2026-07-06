@@ -168,7 +168,18 @@ Returns `302` to the last saved URL for that manga.
 GET /mw/list?token={TOKEN}
 ```
 
-Shows a simple table with saved progress and open links.
+Shows a responsive card list with saved progress, open links, and delete buttons.
+
+### Delete Progress
+
+```http
+POST /mw/delete
+Content-Type: application/x-www-form-urlencoded
+
+token={TOKEN}&mangaId={MANGA_ID}
+```
+
+Deletes one saved progress entry and redirects back to `/mw/list`.
 
 ### JSON API
 

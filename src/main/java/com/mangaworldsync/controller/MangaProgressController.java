@@ -3,6 +3,8 @@ package com.mangaworldsync.controller;
 import com.mangaworldsync.model.MangaProgress;
 import com.mangaworldsync.service.MangaProgressService;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,6 +60,14 @@ public class MangaProgressController {
 	public ResponseEntity<String> list(@RequestParam String token) {
 		Collection<MangaProgress> progress = service.findAll(token);
 		return ResponseEntity.ok(renderList(token, progress));
+	}
+
+	@PostMapping("/delete")
+	public ResponseEntity<Void> delete(@RequestParam String token, @RequestParam String mangaId) {
+		service.delete(token, mangaId);
+		return ResponseEntity.status(HttpStatus.SEE_OTHER)
+				.location(URI.create("/mw/list?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
+				.build();
 	}
 
 	@GetMapping("/api/progress")
@@ -113,17 +124,28 @@ public class MangaProgressController {
 				    .title { margin: 0; font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere; }
 				    .progress { color: var(--accent-strong); font-size: .95rem; }
 				    .meta { display: flex; flex-wrap: wrap; gap: .45rem .9rem; color: var(--muted); font-size: .85rem; }
-				    .open {
+				    .actions { display: grid; gap: .45rem; }
+				    .delete-form { margin: 0; }
+				    .open, .delete {
 				      display: inline-flex;
 				      align-items: center;
 				      justify-content: center;
 				      min-height: 2.5rem;
 				      padding: 0 1rem;
 				      border-radius: .4rem;
+				      border: 0;
+				      font: inherit;
 				      background: var(--accent);
 				      color: #061411;
 				      font-weight: 700;
 				      text-decoration: none;
+				      cursor: pointer;
+				    }
+				    .delete {
+				      width: 100%;
+				      background: transparent;
+				      color: #f2a6a6;
+				      border: 1px solid #5b2a2a;
 				    }
 				    .empty {
 				      padding: 1rem;
@@ -140,8 +162,11 @@ public class MangaProgressController {
 				        gap: .8rem;
 				      }
 				      .cover, .cover-empty { width: 4.5rem; }
-				      .open {
+				      .actions {
 				        grid-column: 1 / -1;
+				        grid-template-columns: 1fr 1fr;
+				      }
+				      .open, .delete {
 				        width: 100%;
 				      }
 				    }
@@ -168,9 +193,18 @@ public class MangaProgressController {
 					.append("<div class=\"meta\"><span>").append(escape(progress.slug())).append("</span><span>Aggiornato ")
 					.append(escape(UPDATED_AT_FORMATTER.format(progress.updatedAt()))).append("</span></div>")
 					.append("</div>")
+					.append("<div class=\"actions\">")
 					.append("<a class=\"open\" href=\"/mw/go?token=").append(escape(token))
 					.append("&amp;mangaId=").append(escape(progress.mangaId()))
 					.append("\">Apri</a>")
+					.append("<form class=\"delete-form\" method=\"post\" action=\"/mw/delete\" onsubmit=\"return confirm('Eliminare ")
+					.append(escapeJs(displayTitle(progress)))
+					.append(" dalla lista?')\">")
+					.append("<input type=\"hidden\" name=\"token\" value=\"").append(escape(token)).append("\">")
+					.append("<input type=\"hidden\" name=\"mangaId\" value=\"").append(escape(progress.mangaId())).append("\">")
+					.append("<button class=\"delete\" type=\"submit\">Elimina</button>")
+					.append("</form>")
+					.append("</div>")
 					.append("</article>");
 		}
 
@@ -211,5 +245,14 @@ public class MangaProgressController {
 
 	private static String escape(String value) {
 		return HtmlUtils.htmlEscape(value == null ? "" : value);
+	}
+
+	private static String escapeJs(String value) {
+		String escaped = (value == null ? "" : value)
+				.replace("\\", "\\\\")
+				.replace("'", "\\'")
+				.replace("\r", " ")
+				.replace("\n", " ");
+		return escape(escaped);
 	}
 }

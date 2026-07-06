@@ -2,6 +2,7 @@ package com.mangaworldsync.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -97,6 +98,25 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString(COVER_URL)))
 				.andExpect(content().string(containsString("Nanatsu no Taizai")))
 				.andExpect(content().string(containsString("404")))
+				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("Apri")));
+	}
+
+	@Test
+	void deleteRemovesSavedProgressAndRedirectsToList() throws Exception {
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", URL)
+						.param("title", "Nanatsu no Taizai"));
+
+		mockMvc.perform(post("/mw/delete")
+						.param("token", "test-token")
+						.param("mangaId", "404"))
+				.andExpect(status().isSeeOther())
+				.andExpect(header().string("Location", "/mw/list?token=test-token"));
+
+		mockMvc.perform(get("/mw/api/progress").param("token", "test-token"))
+				.andExpect(status().isOk())
+				.andExpect(content().json("[]"));
 	}
 }

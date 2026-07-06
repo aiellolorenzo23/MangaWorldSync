@@ -11,4 +11,6 @@ public interface MangaProgressRepository {
 	Optional<MangaProgress> findByMangaId(String mangaId);
 
 	Collection<MangaProgress> findAll();
+
+	void deleteByMangaId(String mangaId);
 }

@@ -53,5 +53,10 @@ class FakeDbMangaProgressRepositoryTests {
 		assertThat(repository.findByMangaId("404")).contains(updated);
 		assertThat(repository.findAll()).containsExactly(updated);
 		assertThat(Path.of("target/test-data/repository-fakedb.json")).exists();
+
+		repository.deleteByMangaId("404");
+
+		assertThat(repository.findByMangaId("404")).isEmpty();
+		assertThat(repository.findAll()).isEmpty();
 	}
 }

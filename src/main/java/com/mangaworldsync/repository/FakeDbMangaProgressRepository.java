@@ -32,4 +32,9 @@ public class FakeDbMangaProgressRepository implements MangaProgressRepository {
 				.sorted(Comparator.comparing(MangaProgress::updatedAt).reversed())
 				.toList();
 	}
+
+	@Override
+	public void deleteByMangaId(String mangaId) {
+		progress.deleteById(mangaId);
+	}
 }
