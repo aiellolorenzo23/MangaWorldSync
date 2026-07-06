@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: MangaWorldSync
+
+server:
+  port: ${PORT:8080}
+
+manga-sync:
+  token: ${MANGA_SYNC_TOKEN:cambia-questo-token-lungo-e-random}
+  storage-file: ${MANGA_SYNC_STORAGE_FILE:./data/manga-progress.json}
+  allowed-hosts:
+    - mangaworld.mx
+    - www.mangaworld.mx
+
+fakedb:
+  enabled: true
+  path: ${MANGA_SYNC_STORAGE_FILE:./data/manga-progress.json}
+  database: manga_world_sync
+  default-schema: main
+  auto-create: true
+  pretty-print: true
+  backup-on-save: false
+  fail-on-unknown-properties: true
