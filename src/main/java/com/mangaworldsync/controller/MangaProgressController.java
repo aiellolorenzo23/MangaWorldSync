@@ -138,6 +138,7 @@ public class MangaProgressController {
 				      border-radius: .5rem;
 				      background: var(--panel);
 				    }
+				    .manga-card[hidden], .empty[hidden] { display: none; }
 				    .cover { width: 5rem; aspect-ratio: 2 / 3; object-fit: cover; border-radius: .35rem; background: var(--panel-strong); display: block; }
 				    .cover-empty { width: 5rem; aspect-ratio: 2 / 3; border-radius: .35rem; background: var(--panel-strong); border: 1px solid var(--line); }
 				    .details { min-width: 0; display: grid; gap: .35rem; }

@@ -101,6 +101,7 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("Cerca manga")))
 				.andExpect(content().string(containsString("Aggiornati di recente")))
 				.andExpect(content().string(containsString("Titolo A-Z")))
+				.andExpect(content().string(containsString(".manga-card[hidden]")))
 				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("Apri")));
 	}
