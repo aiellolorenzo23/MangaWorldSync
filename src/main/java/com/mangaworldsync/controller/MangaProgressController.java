@@ -82,7 +82,7 @@ public class MangaProgressController {
 				<head>
 				  <meta charset="utf-8">
 				  <meta name="viewport" content="width=device-width, initial-scale=1">
-				  <title>MangaWorldSync</title>
+				  <title>mangaworld-sync</title>
 				  <style>
 				    :root {
 				      color-scheme: dark;
@@ -105,7 +105,8 @@ public class MangaProgressController {
 				    }
 				    main { width: min(1120px, 100%); margin: 0 auto; padding: 2rem 1rem 3rem; }
 				    header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
-				    h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1; }
+				    .brand { display: block; width: min(23rem, 72vw); height: auto; }
+				    .brand-text { fill: var(--text); font: 800 76px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
 				    .count { color: var(--muted); font-size: .95rem; white-space: nowrap; }
 				    .library { display: grid; gap: .85rem; }
 				    .manga-card {
@@ -143,9 +144,9 @@ public class MangaProgressController {
 				    }
 				    .delete {
 				      width: 100%;
-				      background: transparent;
-				      color: #f2a6a6;
-				      border: 1px solid #5b2a2a;
+				      background: #dc2626;
+				      color: #ffffff;
+				      border: 1px solid #ef4444;
 				    }
 				    .empty {
 				      padding: 1rem;
@@ -175,10 +176,10 @@ public class MangaProgressController {
 				<body>
 				<main>
 				<header>
-				  <h1>MangaWorldSync</h1>
 				""");
 
-		html.append("<div class=\"count\">").append(progressItems.size()).append(" salvati</div>")
+		html.append(renderBrandLogo())
+				.append("<div class=\"count\">").append(progressItems.size()).append(" salvati</div>")
 				.append("""
 				</header>
 				<section class="library">
@@ -219,6 +220,22 @@ public class MangaProgressController {
 				</html>
 				""");
 		return html.toString();
+	}
+
+	private static String renderBrandLogo() {
+		return """
+				<svg class="brand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 120" role="img" aria-label="mangaworld-sync">
+				  <title>mangaworld-sync</title>
+				  <text class="brand-text" x="0" y="82">mangaworld-sync</text>
+				  <g transform="translate(760 2) scale(.34) translate(-2165 0)">
+				    <path fill="#ee6c4d" d="M2348.77,323.73h0a27,27,0,0,1-36.94-9.9L2219.14,153.3v147a27,27,0,1,1-54.09,0V54.71q0-.73,0-1.45A27,27,0,0,1,2178.61,29h0a27,27,0,0,1,36.94,9.9L2358.67,286.8A27,27,0,0,1,2348.77,323.73Z"/>
+				    <rect fill="#ee6c4d" x="2333.94" y="6.22" width="54.09" height="340.31" rx="27.04" ry="27.04" transform="translate(228.12 1204.12) rotate(-30)"/>
+				    <rect fill="#3d5a80" x="2431.29" y="6.22" width="54.09" height="340.31" rx="27.04" ry="27.04" transform="translate(241.16 1252.8) rotate(-30)"/>
+				    <rect fill="#3d5a80" x="2528.46" y="6.22" width="54.09" height="340.31" rx="27.04" ry="27.04" transform="translate(254.18 1301.38) rotate(-30)"/>
+				    <rect fill="#3d5a80" x="2625.55" y="6.22" width="54.09" height="340.31" rx="27.04" ry="27.04" transform="translate(267.19 1349.93) rotate(-30)"/>
+				  </g>
+				</svg>
+				""";
 	}
 
 	private static String displayTitle(MangaProgress progress) {
