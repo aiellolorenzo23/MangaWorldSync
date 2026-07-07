@@ -11,6 +11,8 @@ manga-sync:
   allowed-hosts:
     - mangaworld.mx
     - www.mangaworld.mx
+    - mangaworldadult.net
+    - www.mangaworldadult.net
 
 fakedb:
   enabled: true

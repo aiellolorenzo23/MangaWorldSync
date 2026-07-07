@@ -13,7 +13,7 @@ class MangaUrlParserTests {
 	private final MangaUrlParser parser = new MangaUrlParser(new MangaSyncProperties(
 			"secret",
 			Path.of("progress.json"),
-			List.of("mangaworld.mx", "www.mangaworld.mx")));
+			List.of("mangaworld.mx", "www.mangaworld.mx", "mangaworldadult.net", "www.mangaworldadult.net")));
 
 	@Test
 	void parsesValidReaderUrl() {
@@ -30,6 +30,16 @@ class MangaUrlParserTests {
 		ParsedMangaUrl parsed = parser.parse("https://mangaworld.mx/manga/404/nanatsu-no-taizai/read/chapter/1");
 
 		assertThat(parsed.mangaId()).isEqualTo("404");
+	}
+
+	@Test
+	void parsesAllowedAdultReaderUrl() {
+		ParsedMangaUrl parsed = parser.parse("https://www.mangaworldadult.net/manga/4032/ane-no-himitsu-to-boku-no-jisatsu/read/67fa56ef1ce4d750c0cdac6b/11");
+
+		assertThat(parsed.mangaId()).isEqualTo("4032");
+		assertThat(parsed.slug()).isEqualTo("ane-no-himitsu-to-boku-no-jisatsu");
+		assertThat(parsed.chapterId()).isEqualTo("67fa56ef1ce4d750c0cdac6b");
+		assertThat(parsed.page()).isEqualTo(11);
 	}
 
 	@Test
