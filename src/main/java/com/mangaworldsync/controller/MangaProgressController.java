@@ -233,8 +233,9 @@ public class MangaProgressController {
 				""");
 
 		html.append(renderBrandLogo())
-				.append("<div class=\"count\"><span id=\"visible-count\">").append(progressItems.size()).append("</span> / ")
-				.append(progressItems.size()).append(" salvati</div>")
+				.append("<div class=\"count\"><span id=\"visible-count\">").append(progressItems.size())
+				.append("</span> / <span id=\"total-count\">")
+				.append(progressItems.size()).append("</span> salvati</div>")
 				.append("""
 				</header>
 				<section class="toolbar" aria-label="Filtri libreria">
@@ -303,9 +304,39 @@ public class MangaProgressController {
 				  const sort = document.querySelector('#sort');
 				  const showNsfw = document.querySelector('#show-nsfw');
 				  const visibleCount = document.querySelector('#visible-count');
+				  const totalCount = document.querySelector('#total-count');
 				  const emptyMessage = document.querySelector('#empty-message');
-				  const cards = Array.from(document.querySelectorAll('.manga-card'));
+				  const token = new URLSearchParams(window.location.search).get('token') || '';
+				  let cards = Array.from(document.querySelectorAll('.manga-card'));
+				  let lastRefreshAt = Date.now();
 				  const compareText = (a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' });
+				  const htmlEscapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+				  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => htmlEscapeMap[char]);
+				  const displayTitle = item => {
+				    const title = item.title && item.title.trim() ? item.title : item.slug;
+				    return title
+				      .replace(/\\s+-\\s*MangaWorld$/i, '')
+				      .replace(/\\s+Capitolo\\s+[\\w.-]+.*$/i, '')
+				      .trim();
+				  };
+				  const chapterValue = item => {
+				    const match = String(item.title || '').match(/\\bcapitolo\\s+([\\w.-]+)/i);
+				    return match ? match[1] : item.chapterId;
+				  };
+				  const isAdult = item => {
+				    try {
+				      return new URL(item.url).hostname.toLocaleLowerCase('it').includes('mangaworldadult.');
+				    } catch {
+				      return false;
+				    }
+				  };
+				  const formatUpdatedAt = item => new Intl.DateTimeFormat('it-IT', {
+				    day: '2-digit',
+				    month: '2-digit',
+				    year: 'numeric',
+				    hour: '2-digit',
+				    minute: '2-digit'
+				  }).format(new Date(item.updatedAt));
 				  const sorters = {
 				    'updated-desc': (a, b) => Number(b.dataset.updated) - Number(a.dataset.updated),
 				    'updated-asc': (a, b) => Number(a.dataset.updated) - Number(b.dataset.updated),
@@ -314,6 +345,64 @@ public class MangaProgressController {
 				    'page-desc': (a, b) => Number(b.dataset.page) - Number(a.dataset.page),
 				    'page-asc': (a, b) => Number(a.dataset.page) - Number(b.dataset.page)
 				  };
+				  function createCard(item) {
+				    const title = displayTitle(item);
+				    const chapter = chapterValue(item);
+				    const adult = isAdult(item);
+				    const updated = Date.parse(item.updatedAt) || 0;
+				    const article = document.createElement('article');
+				    article.className = 'manga-card';
+				    article.dataset.title = title;
+				    article.dataset.slug = item.slug || '';
+				    article.dataset.updated = String(updated);
+				    article.dataset.page = String(item.page ?? 0);
+				    article.dataset.chapter = chapter || '';
+				    article.dataset.adult = String(adult);
+				    const cover = item.coverUrl
+				      ? `<img class="cover" src="${escapeHtml(item.coverUrl)}" alt="Copertina ${escapeHtml(title)}" loading="lazy">`
+				      : '<div class="cover-empty"></div>';
+				    const badge = adult ? '<span class="badge">NSFW</span>' : '';
+				    article.innerHTML = `
+				      ${cover}
+				      <div class="details">
+				        <h2 class="title">${escapeHtml(title)}</h2>
+				        <div class="progress">Capitolo ${escapeHtml(chapter)} · Pagina ${escapeHtml(item.page)}</div>
+				        <div class="meta"><span>${escapeHtml(item.slug)}</span><span>Aggiornato ${escapeHtml(formatUpdatedAt(item))}</span></div>
+				        ${badge}
+				      </div>
+				      <div class="actions">
+				        <a class="open" target="_blank" rel="noopener" href="/mw/go?token=${encodeURIComponent(token)}&amp;mangaId=${encodeURIComponent(item.mangaId)}">Apri</a>
+				        <form class="delete-form" method="post" action="/mw/delete">
+				          <input type="hidden" name="token" value="${escapeHtml(token)}">
+				          <input type="hidden" name="mangaId" value="${escapeHtml(item.mangaId)}">
+				          <button class="delete" type="submit">Elimina</button>
+				        </form>
+				      </div>`;
+				    article.querySelector('.delete-form').addEventListener('submit', event => {
+				      if (!confirm(`Eliminare ${title} dalla lista?`)) event.preventDefault();
+				    });
+				    return article;
+				  }
+				  function renderCards(items) {
+				    cards.forEach(card => card.remove());
+				    cards = items.map(createCard);
+				    cards.forEach(card => library.insertBefore(card, emptyMessage));
+				    totalCount.textContent = String(cards.length);
+				    applyFilters();
+				  }
+				  async function refreshLibrary() {
+				    try {
+				      const response = await fetch(`/mw/api/progress?token=${encodeURIComponent(token)}`, {
+				        headers: { Accept: 'application/json' },
+				        cache: 'no-store'
+				      });
+				      if (!response.ok) return;
+				      renderCards(await response.json());
+				      lastRefreshAt = Date.now();
+				    } catch {
+				      // The next tab focus will try again.
+				    }
+				  }
 				  function applyFilters() {
 				    const query = search.value.trim().toLocaleLowerCase('it');
 				    const nsfwEnabled = showNsfw.checked;
@@ -335,6 +424,12 @@ public class MangaProgressController {
 				  search.addEventListener('input', applyFilters);
 				  sort.addEventListener('change', applyFilters);
 				  showNsfw.addEventListener('change', applyFilters);
+				  document.addEventListener('visibilitychange', () => {
+				    if (!document.hidden && Date.now() - lastRefreshAt > 1000) refreshLibrary();
+				  });
+				  window.addEventListener('pageshow', event => {
+				    if (event.persisted) refreshLibrary();
+				  });
 				  applyFilters();
 				})();
 				</script>

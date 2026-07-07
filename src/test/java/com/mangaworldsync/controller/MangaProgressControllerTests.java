@@ -105,6 +105,7 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("Nanatsu no Taizai")))
 				.andExpect(content().string(containsString("404")))
 				.andExpect(content().string(containsString("Cerca manga")))
+				.andExpect(content().string(containsString("id=\"total-count\"")))
 				.andExpect(content().string(containsString("Aggiornati di recente")))
 				.andExpect(content().string(containsString("Titolo A-Z")))
 				.andExpect(content().string(containsString("Mostra NSFW")))
@@ -112,6 +113,8 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("data-adult=\"true\"")))
 				.andExpect(content().string(containsString("NSFW")))
 				.andExpect(content().string(containsString(".manga-card[hidden]")))
+				.andExpect(content().string(containsString("visibilitychange")))
+				.andExpect(content().string(containsString("/mw/api/progress?token=")))
 				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("target=\"_blank\"")))
 				.andExpect(content().string(containsString("Apri")));
