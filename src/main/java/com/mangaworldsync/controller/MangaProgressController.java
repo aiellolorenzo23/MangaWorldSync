@@ -76,6 +76,7 @@ public class MangaProgressController {
 	}
 
 	private String renderList(String token, Collection<MangaProgress> progressItems) {
+		boolean hasAdultProgress = progressItems.stream().anyMatch(MangaProgressController::isAdult);
 		StringBuilder html = new StringBuilder("""
 				<!doctype html>
 				<html lang="it">
@@ -151,6 +152,7 @@ public class MangaProgressController {
 				      accent-color: var(--accent);
 				      cursor: pointer;
 				    }
+				    .nsfw-toggle[hidden] { display: none; }
 				    .library { display: grid; gap: .85rem; }
 				    .manga-card {
 				      display: grid;
@@ -248,7 +250,10 @@ public class MangaProgressController {
 				    <option value="page-desc">Pagina piu alta</option>
 				    <option value="page-asc">Pagina piu bassa</option>
 				  </select>
-				  <label class="nsfw-toggle"><input id="show-nsfw" type="checkbox">Mostra NSFW</label>
+				  <label class="nsfw-toggle" id='nsfw-toggle'""")
+				.append(hasAdultProgress ? "" : " hidden")
+				.append("><input id=\"show-nsfw\" type=\"checkbox\">Mostra NSFW</label>")
+				.append("""
 				</section>
 				<section class="library" id="library">
 				""");
@@ -302,6 +307,7 @@ public class MangaProgressController {
 				  const library = document.querySelector('#library');
 				  const search = document.querySelector('#search');
 				  const sort = document.querySelector('#sort');
+				  const nsfwToggle = document.querySelector('#nsfw-toggle');
 				  const showNsfw = document.querySelector('#show-nsfw');
 				  const visibleCount = document.querySelector('#visible-count');
 				  const totalCount = document.querySelector('#total-count');
@@ -388,7 +394,13 @@ public class MangaProgressController {
 				    cards = items.map(createCard);
 				    cards.forEach(card => library.insertBefore(card, emptyMessage));
 				    totalCount.textContent = String(cards.length);
+				    updateNsfwToggle();
 				    applyFilters();
+				  }
+				  function updateNsfwToggle() {
+				    const hasAdult = cards.some(card => card.dataset.adult === 'true');
+				    nsfwToggle.hidden = !hasAdult;
+				    if (!hasAdult) showNsfw.checked = false;
 				  }
 				  async function refreshLibrary() {
 				    try {
@@ -430,6 +442,7 @@ public class MangaProgressController {
 				  window.addEventListener('pageshow', event => {
 				    if (event.persisted) refreshLibrary();
 				  });
+				  updateNsfwToggle();
 				  applyFilters();
 				})();
 				</script>

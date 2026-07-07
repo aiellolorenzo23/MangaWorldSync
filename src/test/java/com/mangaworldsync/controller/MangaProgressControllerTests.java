@@ -121,6 +121,19 @@ class MangaProgressControllerTests {
 	}
 
 	@Test
+	void listHidesNsfwToggleWhenNoAdultProgressExists() throws Exception {
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", URL)
+						.param("title", "Nanatsu no Taizai"));
+
+		mockMvc.perform(get("/mw/list").param("token", "test-token"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("id='nsfw-toggle' hidden")))
+				.andExpect(content().string(containsString("updateNsfwToggle()")));
+	}
+
+	@Test
 	void deleteRemovesSavedProgressAndRedirectsToList() throws Exception {
 		mockMvc.perform(get("/mw/save")
 						.param("token", "test-token")
