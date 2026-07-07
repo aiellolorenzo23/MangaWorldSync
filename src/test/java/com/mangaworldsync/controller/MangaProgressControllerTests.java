@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class MangaProgressControllerTests {
 
 	private static final String URL = "https://www.mangaworld.mx/manga/404/nanatsu-no-taizai/read/5f74d960d165b15bc7740472/9";
+	private static final String ADULT_URL = "https://www.mangaworldadult.net/manga/4032/ane-no-himitsu-to-boku-no-jisatsu/read/67fa56ef1ce4d750c0cdac6b/11";
 	private static final String COVER_URL = "https://www.mangaworld.mx/covers/nanatsu.jpg";
 
 	@Autowired
@@ -91,6 +92,10 @@ class MangaProgressControllerTests {
 						.param("url", URL)
 						.param("title", "Nanatsu no Taizai")
 						.param("coverUrl", COVER_URL));
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", ADULT_URL)
+						.param("title", "Ane no Himitsu"));
 
 		mockMvc.perform(get("/mw/list").param("token", "test-token"))
 				.andExpect(status().isOk())
@@ -102,6 +107,10 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("Cerca manga")))
 				.andExpect(content().string(containsString("Aggiornati di recente")))
 				.andExpect(content().string(containsString("Titolo A-Z")))
+				.andExpect(content().string(containsString("Mostra NSFW")))
+				.andExpect(content().string(containsString("data-adult=\"false\"")))
+				.andExpect(content().string(containsString("data-adult=\"true\"")))
+				.andExpect(content().string(containsString("NSFW")))
 				.andExpect(content().string(containsString(".manga-card[hidden]")))
 				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("target=\"_blank\"")))

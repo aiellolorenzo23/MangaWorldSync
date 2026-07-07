@@ -113,8 +113,9 @@ public class MangaProgressController {
 				    .count { color: var(--muted); font-size: .95rem; white-space: nowrap; }
 				    .toolbar {
 				      display: grid;
-				      grid-template-columns: minmax(0, 1fr) 13rem;
+				      grid-template-columns: minmax(0, 1fr) 13rem auto;
 				      gap: .75rem;
+				      align-items: center;
 				      margin-bottom: 1rem;
 				    }
 				    .search, .sort {
@@ -130,6 +131,26 @@ public class MangaProgressController {
 				    .search { padding: 0 .9rem; }
 				    .sort { padding: 0 .7rem; cursor: pointer; }
 				    .search:focus, .sort:focus { border-color: var(--accent); }
+				    .nsfw-toggle {
+				      min-height: 2.75rem;
+				      display: inline-flex;
+				      align-items: center;
+				      gap: .55rem;
+				      padding: 0 .8rem;
+				      border: 1px solid var(--line);
+				      border-radius: .45rem;
+				      background: var(--panel);
+				      color: var(--muted);
+				      white-space: nowrap;
+				      cursor: pointer;
+				      user-select: none;
+				    }
+				    .nsfw-toggle input {
+				      width: 1.05rem;
+				      height: 1.05rem;
+				      accent-color: var(--accent);
+				      cursor: pointer;
+				    }
 				    .library { display: grid; gap: .85rem; }
 				    .manga-card {
 				      display: grid;
@@ -148,6 +169,15 @@ public class MangaProgressController {
 				    .title { margin: 0; font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere; }
 				    .progress { color: var(--accent-strong); font-size: .95rem; }
 				    .meta { display: flex; flex-wrap: wrap; gap: .45rem .9rem; color: var(--muted); font-size: .85rem; }
+				    .badge {
+				      width: fit-content;
+				      padding: .15rem .45rem;
+				      border-radius: .35rem;
+				      background: #7f1d1d;
+				      color: #fecaca;
+				      font-size: .75rem;
+				      font-weight: 800;
+				    }
 				    .actions { display: grid; gap: .45rem; }
 				    .delete-form { margin: 0; }
 				    .open, .delete {
@@ -217,24 +247,30 @@ public class MangaProgressController {
 				    <option value="page-desc">Pagina piu alta</option>
 				    <option value="page-asc">Pagina piu bassa</option>
 				  </select>
+				  <label class="nsfw-toggle"><input id="show-nsfw" type="checkbox">Mostra NSFW</label>
 				</section>
 				<section class="library" id="library">
 				""");
 
 		for (MangaProgress progress : progressItems) {
+			boolean adult = isAdult(progress);
 			html.append("<article class=\"manga-card\" data-title=\"").append(escape(displayTitle(progress)))
 					.append("\" data-slug=\"").append(escape(progress.slug()))
 					.append("\" data-updated=\"").append(progress.updatedAt().toEpochMilli())
 					.append("\" data-page=\"").append(progress.page())
 					.append("\" data-chapter=\"").append(escape(chapterValue(progress)))
+					.append("\" data-adult=\"").append(adult)
 					.append("\">")
 					.append(renderCover(progress))
 					.append("<div class=\"details\">")
 					.append("<h2 class=\"title\">").append(escape(displayTitle(progress))).append("</h2>")
 					.append("<div class=\"progress\">").append(escape(displayProgress(progress))).append("</div>")
 					.append("<div class=\"meta\"><span>").append(escape(progress.slug())).append("</span><span>Aggiornato ")
-					.append(escape(UPDATED_AT_FORMATTER.format(progress.updatedAt()))).append("</span></div>")
-					.append("</div>")
+					.append(escape(UPDATED_AT_FORMATTER.format(progress.updatedAt()))).append("</span></div>");
+			if (adult) {
+				html.append("<span class=\"badge\">NSFW</span>");
+			}
+			html.append("</div>")
 					.append("<div class=\"actions\">")
 					.append("<a class=\"open\" target=\"_blank\" rel=\"noopener\" href=\"/mw/go?token=").append(escape(token))
 					.append("&amp;mangaId=").append(escape(progress.mangaId()))
@@ -265,6 +301,7 @@ public class MangaProgressController {
 				  const library = document.querySelector('#library');
 				  const search = document.querySelector('#search');
 				  const sort = document.querySelector('#sort');
+				  const showNsfw = document.querySelector('#show-nsfw');
 				  const visibleCount = document.querySelector('#visible-count');
 				  const emptyMessage = document.querySelector('#empty-message');
 				  const cards = Array.from(document.querySelectorAll('.manga-card'));
@@ -279,10 +316,13 @@ public class MangaProgressController {
 				  };
 				  function applyFilters() {
 				    const query = search.value.trim().toLocaleLowerCase('it');
+				    const nsfwEnabled = showNsfw.checked;
 				    let shown = 0;
 				    cards.sort(sorters[sort.value] || sorters['updated-desc']).forEach(card => {
 				      const text = `${card.dataset.title} ${card.dataset.slug}`.toLocaleLowerCase('it');
-				      const visible = !query || text.includes(query);
+				      const matchesSearch = !query || text.includes(query);
+				      const matchesNsfw = nsfwEnabled || card.dataset.adult !== 'true';
+				      const visible = matchesSearch && matchesNsfw;
 				      card.hidden = !visible;
 				      if (visible) shown += 1;
 				      library.insertBefore(card, emptyMessage);
@@ -294,6 +334,7 @@ public class MangaProgressController {
 				  }
 				  search.addEventListener('input', applyFilters);
 				  sort.addEventListener('change', applyFilters);
+				  showNsfw.addEventListener('change', applyFilters);
 				  applyFilters();
 				})();
 				</script>
@@ -342,6 +383,16 @@ public class MangaProgressController {
 		}
 		return "<img class=\"cover\" src=\"" + escape(progress.coverUrl()) + "\" alt=\"Copertina "
 				+ escape(displayTitle(progress)) + "\" loading=\"lazy\">";
+	}
+
+	private static boolean isAdult(MangaProgress progress) {
+		try {
+			String host = URI.create(progress.url()).getHost();
+			return host != null && host.toLowerCase(Locale.ROOT).contains("mangaworldadult.");
+		}
+		catch (IllegalArgumentException ex) {
+			return false;
+		}
 	}
 
 	private static String escape(String value) {
