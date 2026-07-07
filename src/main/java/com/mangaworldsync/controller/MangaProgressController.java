@@ -83,6 +83,9 @@ public class MangaProgressController {
 				  <meta charset="utf-8">
 				  <meta name="viewport" content="width=device-width, initial-scale=1">
 				  <title>mangaworld-sync</title>
+				  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+				  <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml">
+				  <link rel="apple-touch-icon" href="/favicon.svg">
 				  <style>
 				    :root {
 				      color-scheme: dark;

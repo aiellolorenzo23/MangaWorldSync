@@ -4,6 +4,7 @@ MangaWorldSync_token.txt
 target/
 data/
 .mvn-cache/
+.codex-remote-attachments/
 .env
 .env.*
 *.log

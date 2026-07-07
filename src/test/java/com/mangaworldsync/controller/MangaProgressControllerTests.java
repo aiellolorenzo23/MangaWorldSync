@@ -94,6 +94,7 @@ class MangaProgressControllerTests {
 
 		mockMvc.perform(get("/mw/list").param("token", "test-token"))
 				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("href=\"/favicon.svg\"")))
 				.andExpect(content().string(containsString("Copertina")))
 				.andExpect(content().string(containsString(COVER_URL)))
 				.andExpect(content().string(containsString("Nanatsu no Taizai")))
