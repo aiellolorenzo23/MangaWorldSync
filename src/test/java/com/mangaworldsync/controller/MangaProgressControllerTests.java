@@ -104,6 +104,7 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("Titolo A-Z")))
 				.andExpect(content().string(containsString(".manga-card[hidden]")))
 				.andExpect(content().string(containsString("Elimina")))
+				.andExpect(content().string(containsString("target=\"_blank\"")))
 				.andExpect(content().string(containsString("Apri")));
 	}
 

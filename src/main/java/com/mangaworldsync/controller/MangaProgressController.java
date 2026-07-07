@@ -236,7 +236,7 @@ public class MangaProgressController {
 					.append(escape(UPDATED_AT_FORMATTER.format(progress.updatedAt()))).append("</span></div>")
 					.append("</div>")
 					.append("<div class=\"actions\">")
-					.append("<a class=\"open\" href=\"/mw/go?token=").append(escape(token))
+					.append("<a class=\"open\" target=\"_blank\" rel=\"noopener\" href=\"/mw/go?token=").append(escape(token))
 					.append("&amp;mangaId=").append(escape(progress.mangaId()))
 					.append("\">Apri</a>")
 					.append("<form class=\"delete-form\" method=\"post\" action=\"/mw/delete\" onsubmit=\"return confirm('Eliminare ")
