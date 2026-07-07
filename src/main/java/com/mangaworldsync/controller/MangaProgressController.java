@@ -26,6 +26,7 @@ import org.springframework.web.util.HtmlUtils;
 public class MangaProgressController {
 
 	private static final Pattern CHAPTER_PATTERN = Pattern.compile("(?i)\\bcapitolo\\s+([\\w.-]+)");
+	private static final Pattern ONESHOT_PATTERN = Pattern.compile("(?i)\\boneshot(?:\\s+(\\d+[\\w.-]*))?");
 	private static final DateTimeFormatter UPDATED_AT_FORMATTER = DateTimeFormatter
 			.ofPattern("dd/MM/yyyy HH:mm", Locale.ITALY)
 			.withZone(ZoneId.of("Europe/Rome"));
@@ -264,7 +265,7 @@ public class MangaProgressController {
 					.append("\" data-slug=\"").append(escape(progress.slug()))
 					.append("\" data-updated=\"").append(progress.updatedAt().toEpochMilli())
 					.append("\" data-page=\"").append(progress.page())
-					.append("\" data-chapter=\"").append(escape(chapterValue(progress)))
+					.append("\" data-chapter=\"").append(escape(chapterLabel(progress)))
 					.append("\" data-adult=\"").append(adult)
 					.append("\">")
 					.append(renderCover(progress))
@@ -325,9 +326,25 @@ public class MangaProgressController {
 				      .replace(/\\s+Capitolo\\s+[\\w.-]+.*$/i, '')
 				      .trim();
 				  };
-				  const chapterValue = item => {
+				  const chapterLabel = item => {
 				    const match = String(item.title || '').match(/\\bcapitolo\\s+([\\w.-]+)/i);
-				    return match ? match[1] : item.chapterId;
+				    if (match) return `Capitolo ${match[1]}`;
+				    const oneshotMatch = String(item.title || '').match(/\\boneshot(?:\\s+(\\d+[\\w.-]*))?/i);
+				    if (oneshotMatch) return oneshotMatch[1] ? `Oneshot ${oneshotMatch[1]}` : 'Oneshot';
+				    return `Capitolo ${item.chapterId}`;
+				  };
+				  const itemDate = item => {
+				    if (typeof item.updatedAt === 'number') return new Date(item.updatedAt * 1000);
+				    if (Array.isArray(item.updatedAt)) return new Date(Date.UTC(
+				      item.updatedAt[0],
+				      (item.updatedAt[1] || 1) - 1,
+				      item.updatedAt[2] || 1,
+				      item.updatedAt[3] || 0,
+				      item.updatedAt[4] || 0,
+				      item.updatedAt[5] || 0,
+				      Math.floor((item.updatedAt[6] || 0) / 1000000)
+				    ));
+				    return new Date(item.updatedAt);
 				  };
 				  const isAdult = item => {
 				    try {
@@ -342,7 +359,7 @@ public class MangaProgressController {
 				    year: 'numeric',
 				    hour: '2-digit',
 				    minute: '2-digit'
-				  }).format(new Date(item.updatedAt));
+				  }).format(itemDate(item));
 				  const sorters = {
 				    'updated-desc': (a, b) => Number(b.dataset.updated) - Number(a.dataset.updated),
 				    'updated-asc': (a, b) => Number(a.dataset.updated) - Number(b.dataset.updated),
@@ -353,9 +370,9 @@ public class MangaProgressController {
 				  };
 				  function createCard(item) {
 				    const title = displayTitle(item);
-				    const chapter = chapterValue(item);
+				    const chapter = chapterLabel(item);
 				    const adult = isAdult(item);
-				    const updated = Date.parse(item.updatedAt) || 0;
+				    const updated = itemDate(item).getTime() || 0;
 				    const article = document.createElement('article');
 				    article.className = 'manga-card';
 				    article.dataset.title = title;
@@ -372,7 +389,7 @@ public class MangaProgressController {
 				      ${cover}
 				      <div class="details">
 				        <h2 class="title">${escapeHtml(title)}</h2>
-				        <div class="progress">Capitolo ${escapeHtml(chapter)} · Pagina ${escapeHtml(item.page)}</div>
+				        <div class="progress">${escapeHtml(chapter)} · Pagina ${escapeHtml(item.page)}</div>
 				        <div class="meta"><span>${escapeHtml(item.slug)}</span><span>Aggiornato ${escapeHtml(formatUpdatedAt(item))}</span></div>
 				        ${badge}
 				      </div>
@@ -477,12 +494,18 @@ public class MangaProgressController {
 	}
 
 	private static String displayProgress(MangaProgress progress) {
-		return "Capitolo " + chapterValue(progress) + " · Pagina " + progress.page();
+		return chapterLabel(progress) + " · Pagina " + progress.page();
 	}
 
-	private static String chapterValue(MangaProgress progress) {
+	private static String chapterLabel(MangaProgress progress) {
+		String title = progress.title() == null ? "" : progress.title();
+		Matcher oneshotMatcher = ONESHOT_PATTERN.matcher(title);
+		if (oneshotMatcher.find()) {
+			String number = oneshotMatcher.group(1);
+			return number == null || number.isBlank() ? "Oneshot" : "Oneshot " + number;
+		}
 		Matcher matcher = CHAPTER_PATTERN.matcher(progress.title() == null ? "" : progress.title());
-		return matcher.find() ? matcher.group(1) : progress.chapterId();
+		return matcher.find() ? "Capitolo " + matcher.group(1) : "Capitolo " + progress.chapterId();
 	}
 
 	private static String renderCover(MangaProgress progress) {

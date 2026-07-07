@@ -29,6 +29,8 @@ class MangaProgressControllerTests {
 
 	private static final String URL = "https://www.mangaworld.mx/manga/404/nanatsu-no-taizai/read/5f74d960d165b15bc7740472/9";
 	private static final String ADULT_URL = "https://www.mangaworldadult.net/manga/4032/ane-no-himitsu-to-boku-no-jisatsu/read/67fa56ef1ce4d750c0cdac6b/11";
+	private static final String ONESHOT_URL = "https://www.mangaworld.mx/manga/3309/naruto-gaiden-uzu-no-naka-no-tsumujikaze/read/64b7ab79d302a93f4b9dabc0/52";
+	private static final String NUMBERED_ONESHOT_URL = "https://www.mangaworld.mx/manga/1570/fullmetal-alchemist-prototype/read/5f9a29f43963233d4e6f4f57/12?d=4";
 	private static final String COVER_URL = "https://www.mangaworld.mx/covers/nanatsu.jpg";
 
 	@Autowired
@@ -118,6 +120,24 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("target=\"_blank\"")))
 				.andExpect(content().string(containsString("Apri")));
+	}
+
+	@Test
+	void listRendersOneshotChapterLabels() throws Exception {
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", ONESHOT_URL)
+						.param("title", "Naruto Gaiden: Uzu no Naka no Tsumujikaze Oneshot Scan ITA"));
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", NUMBERED_ONESHOT_URL)
+						.param("title", "Fullmetal Alchemist Prototype Oneshot 02 Scan ITA"));
+
+		mockMvc.perform(get("/mw/list").param("token", "test-token"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Oneshot &middot; Pagina 52")))
+				.andExpect(content().string(containsString("Oneshot 02 &middot; Pagina 12")))
+				.andExpect(content().string(containsString("item.updatedAt * 1000")));
 	}
 
 	@Test
