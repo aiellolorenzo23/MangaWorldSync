@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +76,17 @@ public class MangaProgressController {
 	@GetMapping("/api/progress")
 	public Collection<MangaProgress> apiProgress(@RequestParam String token) {
 		return service.findAll(token);
+	}
+
+	@GetMapping(value = "/api/database/download", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<byte[]> downloadDatabase(@RequestParam String token) {
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+						.filename("manga-progress.json")
+						.build()
+						.toString())
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(service.downloadDatabase(token));
 	}
 
 	private String renderList(String token, Collection<MangaProgress> progressItems) {

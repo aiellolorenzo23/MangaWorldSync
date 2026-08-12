@@ -240,6 +240,16 @@ GET /mw/api/progress?token={TOKEN}
 
 Returns all saved progress entries as JSON.
 
+### Database Download
+
+```http
+GET /mw/api/database/download?token={TOKEN}
+```
+
+Downloads the complete FakeDB JSON file configured by `MANGA_SYNC_STORAGE_FILE` as
+`manga-progress.json`. On Railway this reads the file directly from the mounted
+persistent volume (normally `/data/manga-progress.json`).
+
 ## Sharing The App
 
 This MVP has one library per deployed app/token. If someone else uses the same Railway URL and the same `MANGA_SYNC_TOKEN`, they can read, add, update, and delete entries in the same FakeDB JSON file.

@@ -79,6 +79,34 @@ class MangaProgressControllerTests {
 	}
 
 	@Test
+	void databaseDownloadReturnsStorageFileAsAttachment() throws Exception {
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", URL)
+						.param("title", "Nanatsu no Taizai"));
+
+		mockMvc.perform(get("/mw/api/database/download").param("token", "test-token"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("Content-Disposition", "attachment; filename=\"manga-progress.json\""))
+				.andExpect(content().contentType("application/json"))
+				.andExpect(content().bytes(Files.readAllBytes(Path.of("target/test-data/controller-progress.json"))));
+	}
+
+	@Test
+	void databaseDownloadRejectsWrongToken() throws Exception {
+		mockMvc.perform(get("/mw/api/database/download").param("token", "wrong"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(content().string("Invalid token"));
+	}
+
+	@Test
+	void databaseDownloadReturnsNotFoundWhenStorageFileDoesNotExist() throws Exception {
+		mockMvc.perform(get("/mw/api/database/download").param("token", "test-token"))
+				.andExpect(status().isNotFound())
+				.andExpect(content().string("Database file not found"));
+	}
+
+	@Test
 	void externalUrlIsRejected() throws Exception {
 		mockMvc.perform(get("/mw/save")
 						.param("token", "test-token")

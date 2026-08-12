@@ -3,8 +3,10 @@ package com.mangaworldsync.service;
 import com.mangaworldsync.config.MangaSyncProperties;
 import com.mangaworldsync.model.MangaProgress;
 import com.mangaworldsync.repository.MangaProgressRepository;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
@@ -64,6 +66,19 @@ public class MangaProgressService {
 	public Collection<MangaProgress> findAll(String token) {
 		validateToken(token);
 		return repository.findAll();
+	}
+
+	public byte[] downloadDatabase(String token) {
+		validateToken(token);
+		try {
+			return Files.readAllBytes(properties.storageFile());
+		}
+		catch (java.nio.file.NoSuchFileException ex) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Database file not found", ex);
+		}
+		catch (IOException ex) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not read database file", ex);
+		}
 	}
 
 	public void delete(String token, String mangaId) {
