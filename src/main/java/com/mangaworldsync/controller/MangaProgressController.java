@@ -44,8 +44,10 @@ public class MangaProgressController {
 			@RequestParam String token,
 			@RequestParam String url,
 			@RequestParam(required = false) String title,
-			@RequestParam(required = false) String coverUrl) {
-		MangaProgress progress = service.save(token, url, title, coverUrl);
+			@RequestParam(required = false) String coverUrl,
+			@RequestParam(required = false) String volumeLabel,
+			@RequestParam(required = false) String chapterLabel) {
+		MangaProgress progress = service.save(token, url, title, coverUrl, volumeLabel, chapterLabel);
 		return ResponseEntity.status(HttpStatus.FOUND)
 				.location(URI.create(progress.url()))
 				.build();
@@ -183,7 +185,25 @@ public class MangaProgressController {
 				    .cover-empty { width: 5rem; aspect-ratio: 2 / 3; border-radius: .35rem; background: var(--panel-strong); border: 1px solid var(--line); }
 				    .details { min-width: 0; display: grid; gap: .35rem; }
 				    .title { margin: 0; font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere; }
-				    .progress { color: var(--accent-strong); font-size: .95rem; }
+				    .progress { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+				    .progress-badge {
+				      display: inline-flex;
+				      align-items: center;
+				      min-height: 1.65rem;
+				      padding: .2rem .65rem;
+				      border: 1px solid transparent;
+				      border-radius: 999px;
+				      font-size: .78rem;
+				      font-weight: 750;
+				      line-height: 1.35;
+				      max-width: 100%;
+				      overflow-wrap: anywhere;
+				      letter-spacing: .015em;
+				      box-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 2px 8px rgb(0 0 0 / .16);
+				    }
+				    .progress-volume { background: #2c2519; border-color: #675332; color: #f3ca86; }
+				    .progress-chapter { background: #16302a; border-color: #2d6759; color: var(--accent-strong); }
+				    .progress-page { background: #1b2738; border-color: #38506f; color: #b9d2f5; }
 				    .meta { display: flex; flex-wrap: wrap; gap: .45rem .9rem; color: var(--muted); font-size: .85rem; }
 				    .badge {
 				      width: fit-content;
@@ -284,7 +304,7 @@ public class MangaProgressController {
 					.append(renderCover(progress))
 					.append("<div class=\"details\">")
 					.append("<h2 class=\"title\">").append(escape(displayTitle(progress))).append("</h2>")
-					.append("<div class=\"progress\">").append(escape(displayProgress(progress))).append("</div>")
+					.append(renderProgressBadges(progress))
 					.append("<div class=\"meta\"><span>").append(escape(progress.slug())).append("</span><span>Aggiornato ")
 					.append(escape(UPDATED_AT_FORMATTER.format(progress.updatedAt()))).append("</span></div>");
 			if (adult) {
@@ -340,11 +360,23 @@ public class MangaProgressController {
 				      .trim();
 				  };
 				  const chapterLabel = item => {
+				    if (item.chapterLabel && item.chapterLabel.trim()) return item.chapterLabel.trim();
 				    const match = String(item.title || '').match(/\\bcapitolo\\s+([\\w.-]+)/i);
 				    if (match) return `Capitolo ${match[1]}`;
 				    const oneshotMatch = String(item.title || '').match(/\\boneshot(?:\\s+(\\d+[\\w.-]*))?/i);
 				    if (oneshotMatch) return oneshotMatch[1] ? `Oneshot ${oneshotMatch[1]}` : 'Oneshot';
 				    return `Capitolo ${item.chapterId}`;
+				  };
+				  const progressBadges = item => {
+				    const chapter = chapterLabel(item);
+				    const volume = String(item.volumeLabel || '').trim();
+				    const volumeBadge = volume
+				      ? `<span class="progress-badge progress-volume">${escapeHtml(volume)}</span>`
+				      : '';
+				    const chapterBadge = !volume || volume.localeCompare(chapter, 'it', { sensitivity: 'base' }) !== 0
+				      ? `<span class="progress-badge progress-chapter">${escapeHtml(chapter)}</span>`
+				      : '';
+				    return `<div class="progress">${volumeBadge}${chapterBadge}<span class="progress-badge progress-page">Pagina ${escapeHtml(item.page)}</span></div>`;
 				  };
 				  const itemDate = item => {
 				    if (typeof item.updatedAt === 'number') return new Date(item.updatedAt * 1000);
@@ -402,7 +434,7 @@ public class MangaProgressController {
 				      ${cover}
 				      <div class="details">
 				        <h2 class="title">${escapeHtml(title)}</h2>
-				        <div class="progress">${escapeHtml(chapter)} · Pagina ${escapeHtml(item.page)}</div>
+				        ${progressBadges(item)}
 				        <div class="meta"><span>${escapeHtml(item.slug)}</span><span>Aggiornato ${escapeHtml(formatUpdatedAt(item))}</span></div>
 				        ${badge}
 				      </div>
@@ -506,19 +538,37 @@ public class MangaProgressController {
 				.trim();
 	}
 
-	private static String displayProgress(MangaProgress progress) {
-		return chapterLabel(progress) + " · Pagina " + progress.page();
+	private static String renderProgressBadges(MangaProgress progress) {
+		String chapter = chapterLabel(progress);
+		String volume = progress.volumeLabel() == null ? "" : progress.volumeLabel().trim();
+		StringBuilder html = new StringBuilder("<div class=\"progress\">");
+		if (!volume.isEmpty()) {
+			html.append("<span class=\"progress-badge progress-volume\">").append(escape(volume)).append("</span>");
+		}
+		if (volume.isEmpty() || !volume.equalsIgnoreCase(chapter)) {
+			html.append("<span class=\"progress-badge progress-chapter\">").append(escape(chapter)).append("</span>");
+		}
+		return html.append("<span class=\"progress-badge progress-page\">Pagina ")
+				.append(progress.page())
+				.append("</span></div>")
+				.toString();
 	}
 
 	private static String chapterLabel(MangaProgress progress) {
+		if (progress.chapterLabel() != null && !progress.chapterLabel().isBlank()) {
+			return progress.chapterLabel().trim();
+		}
 		String title = progress.title() == null ? "" : progress.title();
+		Matcher matcher = CHAPTER_PATTERN.matcher(title);
+		if (matcher.find()) {
+			return "Capitolo " + matcher.group(1);
+		}
 		Matcher oneshotMatcher = ONESHOT_PATTERN.matcher(title);
 		if (oneshotMatcher.find()) {
 			String number = oneshotMatcher.group(1);
 			return number == null || number.isBlank() ? "Oneshot" : "Oneshot " + number;
 		}
-		Matcher matcher = CHAPTER_PATTERN.matcher(progress.title() == null ? "" : progress.title());
-		return matcher.find() ? "Capitolo " + matcher.group(1) : "Capitolo " + progress.chapterId();
+		return "Capitolo " + progress.chapterId();
 	}
 
 	private static String renderCover(MangaProgress progress) {

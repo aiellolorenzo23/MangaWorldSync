@@ -27,11 +27,27 @@ class FakeDbMangaProgressRepositoryTests {
 	}
 
 	@Test
+	void readsLegacyStorageWithoutLabels() throws Exception {
+		Files.createDirectories(Path.of("target/test-data"));
+		Files.copy(Path.of("src/test/resources/legacy-progress.json"),
+				Path.of("target/test-data/repository-fakedb.json"));
+
+		MangaProgress legacy = repository.findByMangaId("404").orElseThrow();
+		assertThat(legacy.volumeLabel()).isNull();
+		assertThat(legacy.chapterLabel()).isNull();
+		assertThat(legacy.page()).isEqualTo(9);
+		repository.save(legacy);
+		assertThat(repository.findByMangaId("404")).contains(legacy);
+	}
+
+	@Test
 	void savesUpdatesAndReadsProgress() {
 		MangaProgress first = new MangaProgress(
 				"404",
 				"nanatsu-no-taizai",
 				"chapter-1",
+				"Volume 01",
+				"Capitolo 01",
 				9,
 				"Nanatsu",
 				"https://www.mangaworld.mx/covers/nanatsu.jpg",
@@ -41,6 +57,8 @@ class FakeDbMangaProgressRepositoryTests {
 				"404",
 				"nanatsu-no-taizai",
 				"chapter-2",
+				"Volume 02",
+				"Capitolo 02",
 				10,
 				"Nanatsu",
 				"https://www.mangaworld.mx/covers/nanatsu-new.jpg",

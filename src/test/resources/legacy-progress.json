@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "database": "manga_world_sync",
+  "schemas": {
+    "main": {
+      "manga_progress": [{
+        "mangaId": "404",
+        "slug": "nanatsu-no-taizai",
+        "chapterId": "chapter-1",
+        "page": 9,
+        "title": "Nanatsu",
+        "coverUrl": null,
+        "url": "https://www.mangaworld.mx/manga/404/nanatsu-no-taizai/read/chapter-1/9",
+        "updatedAt": "2026-07-06T21:30:00Z"
+      }]
+    }
+  }
+}

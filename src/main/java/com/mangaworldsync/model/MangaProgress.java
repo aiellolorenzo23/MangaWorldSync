@@ -10,6 +10,8 @@ public record MangaProgress(
 		String mangaId,
 		String slug,
 		String chapterId,
+		String volumeLabel,
+		String chapterLabel,
 		int page,
 		String title,
 		String coverUrl,

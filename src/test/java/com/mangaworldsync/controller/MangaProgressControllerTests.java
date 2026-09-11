@@ -47,7 +47,8 @@ class MangaProgressControllerTests {
 						.param("token", "test-token")
 						.param("url", URL)
 						.param("title", "Nanatsu no Taizai")
-						.param("coverUrl", COVER_URL))
+						.param("coverUrl", COVER_URL)
+						.param("volumeLabel", "Volume 05"))
 				.andExpect(status().isFound())
 				.andExpect(header().string("Location", URL));
 
@@ -55,6 +56,7 @@ class MangaProgressControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].mangaId").value("404"))
 				.andExpect(jsonPath("$[0].title").value("Nanatsu no Taizai"))
+				.andExpect(jsonPath("$[0].volumeLabel").value("Volume 05"))
 				.andExpect(jsonPath("$[0].coverUrl").value(COVER_URL));
 	}
 
@@ -163,9 +165,43 @@ class MangaProgressControllerTests {
 
 		mockMvc.perform(get("/mw/list").param("token", "test-token"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("Oneshot &middot; Pagina 52")))
-				.andExpect(content().string(containsString("Oneshot 02 &middot; Pagina 12")))
+				.andExpect(content().string(containsString("progress-chapter\">Oneshot</span>")))
+				.andExpect(content().string(containsString("progress-chapter\">Oneshot 02</span>")))
+				.andExpect(content().string(containsString("progress-page\">Pagina 52</span>")))
+				.andExpect(content().string(containsString("progress-page\">Pagina 12</span>")))
 				.andExpect(content().string(containsString("item.updatedAt * 1000")));
+	}
+
+	@Test
+	void savesAndEscapesOriginalReaderLabels() throws Exception {
+		mockMvc.perform(get("/mw/save")
+				.param("token", "test-token").param("url", URL)
+				.param("title", "Nanatsu Capitolo 34")
+				.param("volumeLabel", "  Raccolta <Extra>  ")
+				.param("chapterLabel", "  Speciale <01>  "))
+				.andExpect(status().isFound());
+		mockMvc.perform(get("/mw/api/progress").param("token", "test-token"))
+				.andExpect(jsonPath("$[0].volumeLabel").value("Raccolta <Extra>"))
+				.andExpect(jsonPath("$[0].chapterLabel").value("Speciale <01>"));
+		mockMvc.perform(get("/mw/list").param("token", "test-token"))
+				.andExpect(content().string(containsString("progress-volume\">Raccolta &lt;Extra&gt;</span>")))
+				.andExpect(content().string(containsString("progress-chapter\">Speciale &lt;01&gt;</span>")));
+	}
+
+	@Test
+	void listRendersVolumeChapterAndPageBadges() throws Exception {
+		mockMvc.perform(get("/mw/save")
+						.param("token", "test-token")
+						.param("url", URL)
+						.param("title", "Nanatsu no Taizai Capitolo 34 Scan ITA")
+						.param("volumeLabel", "Volume 05"));
+
+		mockMvc.perform(get("/mw/list").param("token", "test-token"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("progress-volume\">Volume 05</span>")))
+				.andExpect(content().string(containsString("progress-chapter\">Capitolo 34</span>")))
+				.andExpect(content().string(containsString("progress-page\">Pagina 9</span>")))
+				.andExpect(content().string(containsString("progressBadges(item)")));
 	}
 
 	@Test

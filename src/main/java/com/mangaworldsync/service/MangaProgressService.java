@@ -42,19 +42,25 @@ public class MangaProgressService {
 		this.clock = clock;
 	}
 
-	public MangaProgress save(String token, String url, String title, String coverUrl) {
+	public MangaProgress save(String token, String url, String title, String coverUrl, String volumeLabel, String chapterLabel) {
 		validateToken(token);
 		ParsedMangaUrl parsedUrl = parser.parse(url);
 		MangaProgress progress = new MangaProgress(
 				parsedUrl.mangaId(),
 				parsedUrl.slug(),
 				parsedUrl.chapterId(),
+				normalizeLabel(volumeLabel),
+				normalizeLabel(chapterLabel),
 				parsedUrl.page(),
 				title,
 				normalizeCoverUrl(coverUrl),
 				parsedUrl.url(),
 				Instant.now(clock));
 		return repository.save(progress);
+	}
+
+	private static String normalizeLabel(String label) {
+		return label == null || label.isBlank() ? null : label.trim();
 	}
 
 	public MangaProgress findByMangaId(String token, String mangaId) {

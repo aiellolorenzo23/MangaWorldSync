@@ -8,6 +8,7 @@ It does not scrape, download, cache, or proxy manga content. It only stores read
 - manga id
 - slug
 - chapter id
+- optional volume and chapter labels, exactly as shown by the reader
 - page
 - optional browser title
 - optional cover image URL
@@ -154,8 +155,10 @@ Create a bookmark called `MW Salva` in Brave Android and Chrome PC.
 Use this as the bookmark URL, replacing the domain and token:
 
 ```js
-javascript:(()=>{const q=s=>document.querySelector(s);const img=q('meta[property="og:image"],meta[name="twitter:image"]')?.content||q('link[rel="image_src"]')?.href||q('.cover img,.thumb img,img[src*="cover"],img[src*="thumb"]')?.src||'';location.href='https://YOUR-RAILWAY-DOMAIN.up.railway.app/mw/save?token=YOUR_SECRET_TOKEN&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)+'&coverUrl='+encodeURIComponent(img)})();
+javascript:(()=>{const q=s=>document.querySelector(s);const label=s=>q(s)?.selectedOptions?.[0]?.textContent?.trim()||'';const img=q('meta[property="og:image"],meta[name="twitter:image"]')?.content||q('link[rel="image_src"]')?.href||q('.cover img,.thumb img,img[src*="cover"],img[src*="thumb"]')?.src||'';location.href='https://YOUR-RAILWAY-DOMAIN.up.railway.app/mw/save?token=YOUR_SECRET_TOKEN&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)+'&coverUrl='+encodeURIComponent(img)+'&volumeLabel='+encodeURIComponent(label('select.volume'))+'&chapterLabel='+encodeURIComponent(label('select.chapter'))})();
 ```
+
+Update existing `MW Salva` bookmarks on both devices to collect the new labels. Previously saved entries remain readable; the volume appears after saving that manga again with the updated bookmarklet. When the reader has no volume selector (for example, an oneshot), only the chapter/oneshot and page badges are shown.
 
 On Android Brave:
 
@@ -190,10 +193,13 @@ GET /mw/save?token={TOKEN}&url={ENCODED_URL}&title={ENCODED_TITLE}
 
 Returns `302` to the original MangaWorld URL when saved.
 
-Optional query parameter:
+Optional query parameters:
 
 ```text
 coverUrl={ENCODED_COVER_URL}
+
+volumeLabel={ENCODED_SELECTED_VOLUME_LABEL}
+chapterLabel={ENCODED_SELECTED_CHAPTER_LABEL}
 ```
 
 ### Resume Progress
