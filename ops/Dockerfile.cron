@@ -1,0 +1,6 @@
+FROM denoland/deno:alpine
+
+WORKDIR /app
+COPY ops/manga-update-check.ts ./manga-update-check.ts
+
+CMD ["run", "--allow-env=MANGA_SYNC_TOKEN", "--allow-net=mangaworldsync-production.up.railway.app", "manga-update-check.ts"]
