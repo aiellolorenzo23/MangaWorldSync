@@ -103,6 +103,7 @@ public class MangaProgressController {
 				  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 				  <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml">
 				  <link rel="apple-touch-icon" href="/favicon.svg">
+				  <link rel="manifest" href="/manifest.webmanifest">
 				  <style>
 				    :root {
 				      color-scheme: dark;
@@ -128,6 +129,40 @@ public class MangaProgressController {
 				    .brand { display: block; width: min(30rem, 84vw); height: auto; }
 				    .brand-text { fill: #3d5a80; font: 900 82px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
 				    .count { color: var(--muted); font-size: .95rem; white-space: nowrap; }
+				    .header-actions { display: flex; align-items: center; gap: .75rem; position: relative; }
+				    .bell-button {
+				      position: relative; width: 2.75rem; height: 2.75rem; display: grid; place-items: center;
+				      border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--text);
+				      cursor: pointer; transition: border-color .15s, background .15s, transform .15s;
+				    }
+				    .bell-button:hover { border-color: var(--accent); background: var(--panel-strong); transform: translateY(-1px); }
+				    .bell-button svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
+				    .bell-count {
+				      position: absolute; top: -.35rem; right: -.25rem; min-width: 1.25rem; height: 1.25rem; padding: 0 .3rem;
+				      display: grid; place-items: center; border: 2px solid var(--bg); border-radius: 999px;
+				      background: #ee6c4d; color: white; font-size: .67rem; font-weight: 850;
+				    }
+				    .bell-count[hidden], .notification-panel[hidden] { display: none; }
+				    .notification-panel {
+				      position: absolute; z-index: 20; top: 3.25rem; right: 0; width: min(25rem, calc(100vw - 1.5rem));
+				      max-height: min(34rem, 75vh); display: flex; flex-direction: column; overflow: hidden;
+				      border: 1px solid #394640; border-radius: .7rem; background: #171d1bf7;
+				      box-shadow: 0 18px 45px rgb(0 0 0 / .42); backdrop-filter: blur(12px);
+				    }
+				    .notification-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .9rem 1rem; border-bottom: 1px solid var(--line); }
+				    .notification-head h2 { margin: 0; font-size: 1rem; }
+				    .text-button { padding: .25rem 0; border: 0; background: none; color: var(--accent-strong); font: inherit; font-size: .8rem; cursor: pointer; }
+				    .notification-list { overflow: auto; }
+				    .notification-item { display: grid; grid-template-columns: 2.65rem 1fr; gap: .75rem; padding: .8rem 1rem; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+				    .notification-item:hover { background: var(--panel-strong); }
+				    .notification-item.unread { background: #16302a80; }
+				    .notification-cover { width: 2.65rem; aspect-ratio: 2 / 3; object-fit: cover; border-radius: .25rem; background: var(--panel-strong); }
+				    .notification-copy { min-width: 0; display: grid; gap: .18rem; align-content: center; }
+				    .notification-title { font-size: .88rem; font-weight: 750; overflow-wrap: anywhere; }
+				    .notification-chapter { color: var(--accent-strong); font-size: .8rem; overflow-wrap: anywhere; }
+				    .notification-date { color: var(--muted); font-size: .72rem; }
+				    .notification-empty { padding: 1.4rem 1rem; color: var(--muted); text-align: center; font-size: .9rem; }
+				    .push-button { margin: .75rem; min-height: 2.4rem; border: 1px solid #38506f; border-radius: .45rem; background: #1b2738; color: #b9d2f5; font: inherit; font-weight: 700; cursor: pointer; }
 				    .toolbar {
 				      display: grid;
 				      grid-template-columns: minmax(0, 1fr) 13rem auto;
@@ -246,7 +281,10 @@ public class MangaProgressController {
 				    }
 				    @media (max-width: 640px) {
 				      main { padding: 1.25rem .75rem 2rem; }
-				      header { align-items: start; flex-direction: column; }
+				      header { align-items: start; }
+				      .brand { width: min(25rem, calc(100vw - 5rem)); }
+				      .count { display: none; }
+				      .notification-panel { position: fixed; top: 4.5rem; right: .75rem; }
 				      .toolbar { grid-template-columns: 1fr; }
 				      .manga-card {
 				        grid-template-columns: 4.5rem minmax(0, 1fr);
@@ -269,10 +307,19 @@ public class MangaProgressController {
 				""");
 
 		html.append(renderBrandLogo())
-				.append("<div class=\"count\"><span id=\"visible-count\">").append(progressItems.size())
+				.append("<div class=\"header-actions\"><div class=\"count\"><span id=\"visible-count\">").append(progressItems.size())
 				.append("</span> / <span id=\"total-count\">")
 				.append(progressItems.size()).append("</span> salvati</div>")
 				.append("""
+				<button class="bell-button" id="bell-button" type="button" aria-label="Notifiche" aria-expanded="false">
+				  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+				  <span class="bell-count" id="bell-count" hidden>0</span>
+				</button>
+				<aside class="notification-panel" id="notification-panel" hidden>
+				  <div class="notification-head"><h2>Nuovi capitoli</h2><button class="text-button" id="read-all" type="button">Segna tutte come lette</button></div>
+				  <div class="notification-list" id="notification-list"><div class="notification-empty">Nessuna notifica.</div></div>
+				  <button class="push-button" id="push-button" type="button" hidden>Attiva notifiche sul telefono</button>
+				</aside></div>
 				</header>
 				<section class="toolbar" aria-label="Filtri libreria">
 				  <input class="search" id="search" type="search" placeholder="Cerca manga" autocomplete="off">
@@ -347,11 +394,88 @@ public class MangaProgressController {
 				  const totalCount = document.querySelector('#total-count');
 				  const emptyMessage = document.querySelector('#empty-message');
 				  const token = new URLSearchParams(window.location.search).get('token') || '';
+				  const bellButton = document.querySelector('#bell-button');
+				  const bellCount = document.querySelector('#bell-count');
+				  const notificationPanel = document.querySelector('#notification-panel');
+				  const notificationList = document.querySelector('#notification-list');
+				  const readAllButton = document.querySelector('#read-all');
+				  const pushButton = document.querySelector('#push-button');
+				  let notifications = [];
 				  let cards = Array.from(document.querySelectorAll('.manga-card'));
 				  let lastRefreshAt = Date.now();
 				  const compareText = (a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' });
 				  const htmlEscapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 				  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => htmlEscapeMap[char]);
+				  const api = path => `${path}${path.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
+				  function renderNotifications() {
+				    const unread = notifications.filter(item => !item.readAt).length;
+				    bellCount.textContent = unread > 99 ? '99+' : String(unread);
+				    bellCount.hidden = unread === 0;
+				    readAllButton.hidden = unread === 0;
+				    if (!notifications.length) {
+				      notificationList.innerHTML = '<div class="notification-empty">Nessun nuovo capitolo.</div>';
+				      return;
+				    }
+				    notificationList.innerHTML = notifications.map(item => {
+				      const cover = item.coverUrl
+				        ? `<img class="notification-cover" src="${escapeHtml(item.coverUrl)}" alt="" loading="lazy">`
+				        : '<div class="notification-cover"></div>';
+				      const discoveredAt = typeof item.discoveredAt === 'number' ? item.discoveredAt * 1000 : item.discoveredAt;
+				      const date = new Date(discoveredAt).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+				      return `<a class="notification-item ${item.readAt ? '' : 'unread'}" data-notification-id="${escapeHtml(item.id)}" href="${escapeHtml(item.chapterUrl)}" target="_blank" rel="noopener">
+				        ${cover}<span class="notification-copy"><span class="notification-title">${escapeHtml(item.mangaTitle)}</span>
+				        <span class="notification-chapter">${escapeHtml(item.chapterLabel)}</span><span class="notification-date">${escapeHtml(date)}</span></span></a>`;
+				    }).join('');
+				  }
+				  async function refreshNotifications() {
+				    try {
+				      const response = await fetch(api('/mw/api/notifications'), { cache: 'no-store' });
+				      if (response.ok) { notifications = await response.json(); renderNotifications(); }
+				    } catch { /* Retry when the page becomes visible. */ }
+				  }
+				  async function markNotificationRead(id) {
+				    const item = notifications.find(entry => entry.id === id);
+				    if (item && !item.readAt) { item.readAt = new Date().toISOString(); renderNotifications(); }
+				    try { await fetch(api(`/mw/api/notifications/read?id=${encodeURIComponent(id)}`), { method: 'POST' }); } catch {}
+				  }
+				  function urlBase64ToUint8Array(value) {
+				    const padding = '='.repeat((4 - value.length % 4) % 4);
+				    const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+				    return Uint8Array.from(atob(base64), char => char.charCodeAt(0));
+				  }
+				  async function updatePushButton() {
+				    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+				    try {
+				      const configResponse = await fetch(api('/mw/api/push/config'));
+				      if (!configResponse.ok) return;
+				      const config = await configResponse.json();
+				      if (!config.enabled) return;
+				      const registration = await navigator.serviceWorker.register('/service-worker.js');
+				      const subscription = await registration.pushManager.getSubscription();
+				      pushButton.hidden = false;
+				      pushButton.dataset.publicKey = config.publicKey;
+				      pushButton.textContent = subscription ? 'Disattiva notifiche sul telefono' : 'Attiva notifiche sul telefono';
+				    } catch { /* Push remains optional. */ }
+				  }
+				  async function togglePush() {
+				    pushButton.disabled = true;
+				    try {
+				      const registration = await navigator.serviceWorker.ready;
+				      let subscription = await registration.pushManager.getSubscription();
+				      if (subscription) {
+				        await fetch(api(`/mw/api/push/unsubscribe?endpoint=${encodeURIComponent(subscription.endpoint)}`), { method: 'POST' });
+				        await subscription.unsubscribe();
+				      } else {
+				        const permission = await Notification.requestPermission();
+				        if (permission !== 'granted') throw new Error('Permesso notifiche non concesso');
+				        subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(pushButton.dataset.publicKey) });
+				        const response = await fetch(api('/mw/api/push/subscribe'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subscription) });
+				        if (!response.ok) throw new Error('Registrazione non riuscita');
+				      }
+				      await updatePushButton();
+				    } catch (error) { alert(error.message || 'Impossibile modificare le notifiche push.'); }
+				    finally { pushButton.disabled = false; }
+				  }
 				  const displayTitle = item => {
 				    const title = item.title && item.title.trim() ? item.title : item.slug;
 				    return title
@@ -498,14 +622,36 @@ public class MangaProgressController {
 				  search.addEventListener('input', applyFilters);
 				  sort.addEventListener('change', applyFilters);
 				  showNsfw.addEventListener('change', applyFilters);
+				  bellButton.addEventListener('click', () => {
+				    notificationPanel.hidden = !notificationPanel.hidden;
+				    bellButton.setAttribute('aria-expanded', String(!notificationPanel.hidden));
+				  });
+				  document.addEventListener('click', event => {
+				    if (!notificationPanel.hidden && !event.target.closest('.header-actions')) {
+				      notificationPanel.hidden = true;
+				      bellButton.setAttribute('aria-expanded', 'false');
+				    }
+				  });
+				  notificationList.addEventListener('click', event => {
+				    const link = event.target.closest('[data-notification-id]');
+				    if (link) markNotificationRead(link.dataset.notificationId);
+				  });
+				  readAllButton.addEventListener('click', async () => {
+				    notifications.forEach(item => { if (!item.readAt) item.readAt = new Date().toISOString(); });
+				    renderNotifications();
+				    try { await fetch(api('/mw/api/notifications/read-all'), { method: 'POST' }); } catch {}
+				  });
+				  pushButton.addEventListener('click', togglePush);
 				  document.addEventListener('visibilitychange', () => {
-				    if (!document.hidden && Date.now() - lastRefreshAt > 1000) refreshLibrary();
+				    if (!document.hidden && Date.now() - lastRefreshAt > 1000) { refreshLibrary(); refreshNotifications(); }
 				  });
 				  window.addEventListener('pageshow', event => {
 				    if (event.persisted) refreshLibrary();
 				  });
 				  updateNsfwToggle();
 				  applyFilters();
+				  refreshNotifications();
+				  updatePushButton();
 				})();
 				</script>
 				</body>

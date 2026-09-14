@@ -149,6 +149,9 @@ class MangaProgressControllerTests {
 				.andExpect(content().string(containsString("/mw/api/progress?token=")))
 				.andExpect(content().string(containsString("Elimina")))
 				.andExpect(content().string(containsString("target=\"_blank\"")))
+				.andExpect(content().string(containsString("id=\"bell-button\"")))
+				.andExpect(content().string(containsString("/mw/api/notifications")))
+				.andExpect(content().string(containsString("Attiva notifiche sul telefono")))
 				.andExpect(content().string(containsString("Apri")));
 	}
 

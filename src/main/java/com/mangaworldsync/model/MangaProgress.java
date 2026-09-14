@@ -16,5 +16,18 @@ public record MangaProgress(
 		String title,
 		String coverUrl,
 		String url,
-		Instant updatedAt) {
+		Instant updatedAt,
+		MangaStatus status,
+		String latestChapterId,
+		String latestChapterLabel,
+		String latestChapterUrl,
+		Instant lastCheckedAt,
+		String trackingError) {
+
+	public MangaProgress(
+			String mangaId, String slug, String chapterId, String volumeLabel, String chapterLabel,
+			int page, String title, String coverUrl, String url, Instant updatedAt) {
+		this(mangaId, slug, chapterId, volumeLabel, chapterLabel, page, title, coverUrl, url, updatedAt,
+				null, null, null, null, null, null);
+	}
 }

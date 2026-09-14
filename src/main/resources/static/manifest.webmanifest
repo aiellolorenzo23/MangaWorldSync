@@ -1,0 +1,9 @@
+{
+  "name": "MangaWorldSync",
+  "short_name": "MWSync",
+  "start_url": "/mw/list",
+  "display": "standalone",
+  "background_color": "#101413",
+  "theme_color": "#101413",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

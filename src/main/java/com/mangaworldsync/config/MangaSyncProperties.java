@@ -8,8 +8,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record MangaSyncProperties(
 		String token,
 		Path storageFile,
-		List<String> allowedHosts) {
+		List<String> allowedHosts,
+		String vapidPublicKey,
+		String vapidPrivateKey,
+		String vapidSubject) {
 
+	public MangaSyncProperties(String token, Path storageFile, List<String> allowedHosts) {
+		this(token, storageFile, allowedHosts, null, null, null);
+	}
+
+	@org.springframework.boot.context.properties.bind.ConstructorBinding
 	public MangaSyncProperties {
 		if (token == null || token.isBlank()) {
 			throw new IllegalArgumentException("manga-sync.token must not be blank");

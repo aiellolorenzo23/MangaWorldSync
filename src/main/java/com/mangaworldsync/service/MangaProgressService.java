@@ -45,6 +45,7 @@ public class MangaProgressService {
 	public MangaProgress save(String token, String url, String title, String coverUrl, String volumeLabel, String chapterLabel) {
 		validateToken(token);
 		ParsedMangaUrl parsedUrl = parser.parse(url);
+		MangaProgress existing = repository.findByMangaId(parsedUrl.mangaId()).orElse(null);
 		MangaProgress progress = new MangaProgress(
 				parsedUrl.mangaId(),
 				parsedUrl.slug(),
@@ -55,7 +56,13 @@ public class MangaProgressService {
 				title,
 				normalizeCoverUrl(coverUrl),
 				parsedUrl.url(),
-				Instant.now(clock));
+				Instant.now(clock),
+				existing == null ? null : existing.status(),
+				existing == null ? null : existing.latestChapterId(),
+				existing == null ? null : existing.latestChapterLabel(),
+				existing == null ? null : existing.latestChapterUrl(),
+				existing == null ? null : existing.lastCheckedAt(),
+				existing == null ? null : existing.trackingError());
 		return repository.save(progress);
 	}
 

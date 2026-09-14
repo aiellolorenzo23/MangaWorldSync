@@ -13,6 +13,9 @@ manga-sync:
     - www.mangaworld.mx
     - mangaworldadult.net
     - www.mangaworldadult.net
+  vapid-public-key: ${MANGA_SYNC_VAPID_PUBLIC_KEY:}
+  vapid-private-key: ${MANGA_SYNC_VAPID_PRIVATE_KEY:}
+  vapid-subject: ${MANGA_SYNC_VAPID_SUBJECT:mailto:mangaworldsync@localhost}
 
 fakedb:
   enabled: true
