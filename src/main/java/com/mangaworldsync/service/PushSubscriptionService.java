@@ -1,5 +1,6 @@
 package com.mangaworldsync.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.mangaworldsync.config.MangaSyncProperties;
 import com.mangaworldsync.model.BrowserPushSubscription;
 import com.mangaworldsync.repository.PushSubscriptionRepository;
@@ -55,6 +56,7 @@ public class PushSubscriptionService {
 	private static boolean present(String value) { return value != null && !value.isBlank(); }
 
 	public record PushConfig(boolean enabled, String publicKey) {}
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record PushSubscriptionRequest(String endpoint, Keys keys) {}
 	public record Keys(String p256dh, String auth) {}
 }

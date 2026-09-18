@@ -81,6 +81,24 @@ class MangaProgressControllerTests {
 	}
 
 	@Test
+	void pushSubscriptionAcceptsBrowserExpirationTime() throws Exception {
+		mockMvc.perform(post("/mw/api/push/subscribe")
+						.param("token", "test-token")
+						.contentType("application/json")
+						.content("""
+								{
+								  "endpoint": "https://push.example.test/subscription",
+								  "expirationTime": null,
+								  "keys": {
+								    "p256dh": "browser-public-key",
+								    "auth": "browser-auth-secret"
+								  }
+								}
+								"""))
+				.andExpect(status().isNoContent());
+	}
+
+	@Test
 	void databaseDownloadReturnsStorageFileAsAttachment() throws Exception {
 		mockMvc.perform(get("/mw/save")
 						.param("token", "test-token")
