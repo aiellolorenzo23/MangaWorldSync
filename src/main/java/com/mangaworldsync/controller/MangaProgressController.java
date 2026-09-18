@@ -443,6 +443,14 @@ public class MangaProgressController {
 				    const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
 				    return Uint8Array.from(atob(base64), char => char.charCodeAt(0));
 				  }
+				  async function savePushSubscription(subscription) {
+				    const response = await fetch(api('/mw/api/push/subscribe'), {
+				      method: 'POST',
+				      headers: { 'Content-Type': 'application/json' },
+				      body: JSON.stringify(subscription)
+				    });
+				    if (!response.ok) throw new Error(`Registrazione non riuscita (${response.status})`);
+				  }
 				  async function updatePushButton() {
 				    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
 				    try {
@@ -452,6 +460,7 @@ public class MangaProgressController {
 				      if (!config.enabled) return;
 				      const registration = await navigator.serviceWorker.register('/service-worker.js');
 				      const subscription = await registration.pushManager.getSubscription();
+				      if (subscription) await savePushSubscription(subscription);
 				      pushButton.hidden = false;
 				      pushButton.dataset.publicKey = config.publicKey;
 				      pushButton.textContent = subscription ? 'Disattiva notifiche sul telefono' : 'Attiva notifiche sul telefono';
@@ -469,8 +478,7 @@ public class MangaProgressController {
 				        const permission = await Notification.requestPermission();
 				        if (permission !== 'granted') throw new Error('Permesso notifiche non concesso');
 				        subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(pushButton.dataset.publicKey) });
-				        const response = await fetch(api('/mw/api/push/subscribe'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subscription) });
-				        if (!response.ok) throw new Error('Registrazione non riuscita');
+				        await savePushSubscription(subscription);
 				      }
 				      await updatePushButton();
 				    } catch (error) { alert(error.message || 'Impossibile modificare le notifiche push.'); }
